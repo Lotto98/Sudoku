@@ -17,10 +17,21 @@ def createSudoku(filename: str):
 
 def printSudoku(sudoku:list[list[Cell]]):
     print(tabulate(sudoku,headers="keys",showindex=True,tablefmt="outline"))
+    
+    if len(sudoku)!=9:
+        print("Warning: malformed sudoku, number of rows is not 9")
+        
+    for n,row in enumerate(sudoku):
+        if len(row)!=9:
+            print("Warning: malformed sudoku in row "+str(n))
 
 def checkDigits(l: list[Cell]):
     
     domain=list(INITIAL_DOMAIN)
+    
+    if len(l)!=9:
+        print("malformed sudoku",end='')
+        return False
     
     for e in l:
         x=e.value
@@ -35,7 +46,7 @@ def checkDigits(l: list[Cell]):
             return False;
     
     if len(domain)!=0:
-        print("digits: "+domain+" not present",end='')
+        print("digits: "+str(domain)+" not present",end='')
         return False
     return True
 
