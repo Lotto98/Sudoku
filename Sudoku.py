@@ -127,50 +127,55 @@ class Sudoku:
         for r in range(0,9):      
             for c in range(0,9):            
                 if not self.sudoku[r][c].isEmpty and (self.sudoku[r][c].value==value or (value is None)):
-                    self.__removeDomainAll(r,c,self.sudoku[r][c].value)
-    
-    def __solverRec(self, min_cell,visited_cells):
-        
-        if not min_cell.isEmpty:
-            return;    
-        try:
-            self.printSudoku()
-            print(min_cell.getCordinates())
-            #update value
-            min_cell.value=min_cell.domain.pop()    
-        except:
-            #if the domain set is empty
-            
-            #get last visited cell
-            last_visited_cell=visited_cells.get()
-            
-            #cell is Empty now
-            last_visited_cell.isEmpty=True
-            
-            #update domains of row, col and square
-            self.__addDomainAll(last_visited_cell.i,last_visited_cell.j,last_visited_cell.value)
-            self.CP(last_visited_cell.value)
-            
-            #remove value from domain
-            last_visited_cell.removeDomain(last_visited_cell.value)
-            
-            #loop
-            self.__solverRec(last_visited_cell,visited_cells)
-        else:
-            #cell no longer empty
-            min_cell.isEmpty=False
-            
-            #update domains of row, col and square
-            self.__removeDomainAll(min_cell.i,min_cell.j,min_cell.value)
-            
-            #visited
-            visited_cells.put((min_cell))
-        
-            #loop
-            self.__solverRec(self.__minDomain(),visited_cells)
+                    self.__removeDomainAll(r,c,self.sudoku[r][c].value)        
             
     def sudokuSolver(self):
         self.CP()
         min_cell=self.__minDomain()
         visited_cells=LifoQueue()
-        self.__solverRec(min_cell,visited_cells)
+        
+        #self.__solverRec(min_cell,visited_cells)
+        
+        while min_cell.isEmpty:
+            
+            if len(min_cell.domain-min_cell.visitedDomain)>0:
+                
+                #update value
+                min_cell.value=(min_cell.domain-min_cell.visitedDomain).pop()
+                min_cell.visitedDomain.add(min_cell.value)
+                
+                #cell no longer empty
+                min_cell.isEmpty=False
+            
+                #update domains of row, col and square
+                self.__removeDomainAll(min_cell.i,min_cell.j,min_cell.value)
+            
+                #visited
+                visited_cells.put((min_cell))
+            
+                #loop
+                min_cell=self.__minDomain()
+            
+            #if the domain set is empty backtracking   
+            else:
+                
+                #reset visited domain for min domain cell
+                min_cell.visitedDomain=set()
+                
+                #print('[',end='')
+                #for x in list(visited_cells.queue):
+                    #print(x.getCordinates(), end=", ")
+                #print(']')
+                
+                #get last visited cell
+                last_visited_cell=visited_cells.get()
+                
+                #cell is Empty now
+                last_visited_cell.isEmpty=True
+                
+                #update domains of row, col and square
+                self.__addDomainAll(last_visited_cell.i,last_visited_cell.j,last_visited_cell.value)
+                self.CP(last_visited_cell.value)
+                
+                #loop
+                min_cell=last_visited_cell

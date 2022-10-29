@@ -14,10 +14,11 @@ class Cell:
         else:
             self.isEmpty=True
             self.domain=set(INITIAL_DOMAIN)
+            self.visitedDomain=set()
             
     def __str__(self):
         if self.isEmpty:        
-            return str(self.value)+str(self.domain)
+            return str(self.domain)
         else:
             return str(self.value)
         
@@ -47,7 +48,7 @@ class Cell:
                     pass
     
     def addDomain(self,_n):
-        if self.isEmpty:
+        if self.isEmpty and _n:
             self.domain.add(_n)
             
     
