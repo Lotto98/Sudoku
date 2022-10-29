@@ -73,7 +73,7 @@ class Sudoku:
         #check squares
         for row_start in range(0,8,3):
             for col_start in range(0,8,3):
-                if not self.__checkDigits(self.__square(self.sudoku,row_start,col_start)):
+                if not self.__checkDigits(self.__square(row_start,col_start)):
                     print(" in square: "+str(row_start)+","+str(col_start))
                     return False
         return True
@@ -134,6 +134,8 @@ class Sudoku:
         if not min_cell.isEmpty:
             return;    
         try:
+            self.printSudoku()
+            print(min_cell.getCordinates())
             #update value
             min_cell.value=min_cell.domain.pop()    
         except:
@@ -168,6 +170,7 @@ class Sudoku:
             self.__solverRec(self.__minDomain(),visited_cells)
             
     def sudokuSolver(self):
+        self.CP()
         min_cell=self.__minDomain()
         visited_cells=LifoQueue()
         self.__solverRec(min_cell,visited_cells)
