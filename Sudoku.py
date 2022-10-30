@@ -62,7 +62,7 @@ class Sudoku:
             try:
                 domain.remove(x)
             except:
-                print("multiple occorences of same number ("+str(x)+")",end='')
+                print("multiple occurrences of same number ("+str(x)+")",end='')
                 return False;
         
         if len(domain)!=0:
@@ -92,7 +92,7 @@ class Sudoku:
         Function that checks the sudoku correctness.
 
         Returns:
-            bool: 'True' if the sudoku is correct, 'False' othewise.
+            bool: 'True' if the sudoku is correct, 'False' otherwise.
         """
         #check rows
         for n,row in enumerate(self.sudoku):
@@ -217,7 +217,7 @@ class Sudoku:
     def sudokuSolverCP(self):
         
         """
-        Sudoku solver with CP and backtracking approch.
+        Sudoku solver with CP and backtracking approach.
         """
         
         #Queue of visited cells
@@ -226,13 +226,13 @@ class Sudoku:
         #initial constraint propagation
         self.__CP()
         
-        #retrive the min cell domain
+        #retrieve the min cell domain
         min_cell=self.__minDomain()
         
         #if the min domain cell is a full cell then the computation is over
         while min_cell.isEmpty:
             
-            #if there is at least one value that was not previusly assigned in the min domain cell domain then:
+            #if there is at least one value that was not previously assigned in the min domain cell domain then:
             if len(min_cell.domain-min_cell.visitedDomain)>0:
                 
                 #1) update value of the min domain cell
@@ -248,22 +248,22 @@ class Sudoku:
                 #4) add the min cell and the cells in which the domain is modified to the visited cells queue as a tuple
                 visited_cells.put((min_cell,domainRemovedCells))
             
-                #5) retrive the next min domain cell
+                #5) retrieve the next min domain cell
                 min_cell=self.__minDomain()
             
-            #if the cell domain is empty or if all the values in the cell domain were previusly assigned backtracking:   
+            #if the cell domain is empty or if all the values in the cell domain were previously assigned backtracking:   
             else:
                 
                 #1) reset visited domain for min domain cell
                 min_cell.visitedDomain=set()
                 
-                #2) get last visited cell and the cell in which the domain was modified by its assignement
+                #2) get last visited cell and the cell in which the domain was modified by its assignment
                 last_visited_cell,domainRemovedCells=visited_cells.get()
                 
                 #3) update last visited cell to a empty cell
                 last_visited_cell.isEmpty=True
                 
-                #4) add the value previusly assigned to the last visited cell to the cells previusly modified by its assignment
+                #4) add the value previously assigned to the last visited cell to the cells previously modified by its assignment
                 for cell in domainRemovedCells:
                     cell.addDomain(last_visited_cell.value)
                 

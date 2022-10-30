@@ -2,10 +2,16 @@ import sys
 from Sudoku import *
 
 def main():
-    sudoku=Sudoku("examples/hard/hard1.txt")
+    
+    #CP and backtracking sudoku solver
+    sudoku=Sudoku("examples/hard/hard5.txt")
+    
     sudoku.printSudoku()
+    
     sudoku.sudokuSolverCP()
+    
     sudoku.printSudoku()
+    
     print(sudoku.checkSudoku())
 
 if __name__ == "__main__":
