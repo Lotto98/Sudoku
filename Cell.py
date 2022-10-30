@@ -3,13 +3,22 @@ INITIAL_DOMAIN=set([x for x in range(1,10)])
 
 class Cell:
     
-    def __init__(self,_i,_j,_value=0):
+    def __init__(self,_i:int,_j:int,_value:int=0):
+        """
+        sudoku cell constructor. All cells have row and col indexes (ints), value (int) and isEmpty (bool).
+        Empty cells have in addition 'domain' and 'visitedDomain'.
+
+        Args:
+            _i (int): row index of the cell.
+            _j (int): col index of the cell.
+            _value (int, optional): value of the cell. Defaults to 0 for empty cells.
+        """
         
         self.value =int(_value)
         self.i=_i
         self.j=_j
         
-        if _value!=0:
+        if self.value!=0:
             self.isEmpty=False
         else:
             self.isEmpty=True
@@ -17,8 +26,14 @@ class Cell:
             self.visitedDomain=set()
             
     def __str__(self):
+        """
+        toString function.
+        
+        Returns:
+            str: cell string.
+        """
         if self.isEmpty:        
-            return str(self.domain)
+            return "-"
         else:
             return str(self.value)
         
@@ -40,15 +55,24 @@ class Cell:
     def getCordinates(self):
         return(self.i,self.j)
     
-    def removeDomain(self,_n):
+    def removeDomain(self,_n:int):
+        """
+            Function that removes a specific value from the cell domain.
+        Args:
+            _n (int): _description_
+
+        Returns:
+            bool: 'True' if the _n is removed correctly, 'False' otherwise.
+        """
         if self.isEmpty:
             try:
                 self.domain.remove(_n)
+                return True
             except:
-                    pass
+                return False
     
     def addDomain(self,_n):
-        if self.isEmpty and _n:
+        if self.isEmpty:
             self.domain.add(_n)
             
     

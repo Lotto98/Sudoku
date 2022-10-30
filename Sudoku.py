@@ -1,9 +1,15 @@
 from queue import LifoQueue
-from Cell import *
+from Cell import Cell, INITIAL_DOMAIN
 from tabulate import tabulate
 
 class Sudoku:
     def __init__(self,filename: str):
+        """
+        Sudoku constructor.
+        
+        Args:
+            filename (str): sudoku file.
+        """
         self.sudoku=[]
         with open(filename) as file:
             for i,line in enumerate(file):
@@ -17,6 +23,9 @@ class Sudoku:
                         row.append(Cell(i,j,_value=int(x)))
         
     def printSudoku(self):
+        """
+        Function that prints sudoku as a matrix of a better visualization.
+        """
         print(tabulate(self.sudoku,headers="keys",showindex=True,tablefmt="outline"))
         
         if len(self.sudoku)!=9:
@@ -28,6 +37,15 @@ class Sudoku:
 
 
     def __checkDigits(self,l: list[Cell]):
+        """
+        Functions that given a list of cells checks if all the 9 digits are present.
+
+        Args:
+            l (list[Cell]): list of cells.
+
+        Returns:
+            bool: 'True' if there are all and only the 9 sudoku digits.
+        """
         
         domain=list(INITIAL_DOMAIN)
         
@@ -53,6 +71,16 @@ class Sudoku:
         return True
 
     def __square(self, i:int, j:int)->list[Cell]:
+        """
+        Function that returns the cells of the sudoku square at indexes 'i' and 'j' as a list.
+        
+        Args:
+            i (int): row index. 
+            j (int): col index.
+
+        Returns:
+            list[Cell]: list of cells in the square.
+        """
         l=[]
         for r in range(i,i+3):
             for c in range(j,j+3):
@@ -60,6 +88,12 @@ class Sudoku:
         return l            
         
     def checkSudoku(self):
+        """
+        Function that checks the sudoku correctness.
+
+        Returns:
+            bool: 'True' if the sudoku is correct, 'False' othewise.
+        """
         #check rows
         for n,row in enumerate(self.sudoku):
             if not self.__checkDigits(row):
@@ -79,9 +113,24 @@ class Sudoku:
         return True
     
     def __minDomain(self)->Cell:
+        """
+        Function that return the sudoku cell with minimum domain.
+        
+        Returns:
+            Cell: min domain cell.
+        """
         return min([item for sublist in self.sudoku for item in sublist], key=lambda x: x.getDomainLen())
     
-    def __whichSquare(self,n):
+    def __whichSquare(self,n:int):
+        """
+        Given an sudoku index return the index of the associated square.
+        
+        Args:
+            n (int): sudoku index.
+
+        Returns:
+            int: square index.
+        """
         if n<3:
             return 0
         if n<6:
@@ -89,93 +138,134 @@ class Sudoku:
         if n<9:
             return 6
     
-    def __removeDomainRow(self,index, value):
+    def __removeDomainRow(self,index:int, value:int)->set[Cell]:
+        """
+        Function that removes from row of index 'index' the specific 'value'.
+
+        Args:
+            index (int): row index.
+            value (int): value to be removed.
+
+        Returns:
+            set[Cell]: cells in which value was removed from their domain.
+        """
+        domainRemovedCells=set()
         for cell in self.sudoku[index]:
-            cell.removeDomain(value)
+            if cell.removeDomain(value):
+                domainRemovedCells.add(cell)
+        return domainRemovedCells    
         
-    def __removeDomainCol(self,index, value):
+    def __removeDomainCol(self,index:int, value:int)->set[Cell]:
+        """
+        Function that removes from col of index 'index' the specific 'value'.
+
+        Args:
+            index (int): col index.
+            value (int): value to be removed.
+
+        Returns:
+            set[Cell]: cells in which value was removed from their domain.
+        """
+        domainRemovedCells=set()
         for cell in list(zip(*self.sudoku))[index]:
-            cell.removeDomain(value)
+            if cell.removeDomain(value):
+                domainRemovedCells.add(cell)
+        return domainRemovedCells
         
-    def __removeDomainSquare(self,indexR,indexC,value):
+    def __removeDomainSquare(self,indexR:int,indexC:int,value:int)->set[Cell]:
+        """
+        Function that removes from square of indexes 'indexR' and 'indexC' the specific 'value'.
+
+        Args:
+            indexR (int): row index.
+            indexC (int): col index.
+            value (int): value to be removed.
+
+        Returns:
+            set[Cell]: cells in which value was removed from their domain.
+        """
+        domainRemovedCells=set()
         for cell in self.__square( self.__whichSquare(indexR), self.__whichSquare(indexC) ):
-            cell.removeDomain(value)
+            if cell.removeDomain(value):
+                domainRemovedCells.add(cell)
+        return domainRemovedCells
             
-    def __removeDomainAll(self,r,c,value):
-        self.__removeDomainRow(r,value)
-        self.__removeDomainCol(c,value)
-        self.__removeDomainSquare(r,c,value)
-            
-    def __addDomainRow(self,index, value):
-        for cell in self.sudoku[index]:
-            cell.addDomain(value)
-        
-    def __addDomainCol(self,index, value):
-        for cell in list(zip(*self.sudoku))[index]:
-            cell.addDomain(value)
-        
-    def __addDomainSquare(self,indexR,indexC,value):
-        for cell in self.__square(self.__whichSquare(indexR),self.__whichSquare(indexC)):
-            cell.addDomain(value)
-            
-    def __addDomainAll(self,r,c,value):
-        self.__addDomainRow(r,value)
-        self.__addDomainCol(c,value)
-        self.__addDomainSquare(r,c,value)
+    def __removeDomainAll(self,r:int,c:int,value:int)->set[Cell]:
+        """
+        Function that removes from row of index 'r', col of index 'c' and square of indexes 'r' and 'c' the specific 'value'.
+
+        Args:
+            r (int): row index.
+            c (int): col index.
+            value (int): value to be removed.
+
+        Returns:
+            set[Cell]: cells in which value was removed from their domain.
+        """
+        return self.__removeDomainRow(r,value) | self.__removeDomainCol(c,value) | self.__removeDomainSquare(r,c,value)
     
-    def CP(self, value=None):
+    def __CP(self):
+        """
+        CP in sudoku. It updates the domain of the empty cells present in row, col or square of every full cell.
+        """
         for r in range(0,9):      
             for c in range(0,9):            
-                if not self.sudoku[r][c].isEmpty and (self.sudoku[r][c].value==value or (value is None)):
+                if not self.sudoku[r][c].isEmpty:
                     self.__removeDomainAll(r,c,self.sudoku[r][c].value)        
+    
             
-    def sudokuSolver(self):
-        self.CP()
-        min_cell=self.__minDomain()
+    def sudokuSolverCP(self):
+        
+        """
+        Sudoku solver with CP and backtracking approch.
+        """
+        
+        #Queue of visited cells
         visited_cells=LifoQueue()
         
-        #self.__solverRec(min_cell,visited_cells)
+        #initial constraint propagation
+        self.__CP()
         
+        #retrive the min cell domain
+        min_cell=self.__minDomain()
+        
+        #if the min domain cell is a full cell then the computation is over
         while min_cell.isEmpty:
             
+            #if there is at least one value that was not previusly assigned in the min domain cell domain then:
             if len(min_cell.domain-min_cell.visitedDomain)>0:
                 
-                #update value
+                #1) update value of the min domain cell
                 min_cell.value=(min_cell.domain-min_cell.visitedDomain).pop()
                 min_cell.visitedDomain.add(min_cell.value)
                 
-                #cell no longer empty
+                #2) update min domain cell to a full cell
                 min_cell.isEmpty=False
             
-                #update domains of row, col and square
-                self.__removeDomainAll(min_cell.i,min_cell.j,min_cell.value)
+                #3) update domains of row, col and square by removing the value assigned to the min domain cell
+                domainRemovedCells=self.__removeDomainAll(min_cell.i,min_cell.j,min_cell.value)
             
-                #visited
-                visited_cells.put((min_cell))
+                #4) add the min cell and the cells in which the domain is modified to the visited cells queue as a tuple
+                visited_cells.put((min_cell,domainRemovedCells))
             
-                #loop
+                #5) retrive the next min domain cell
                 min_cell=self.__minDomain()
             
-            #if the domain set is empty backtracking   
+            #if the cell domain is empty or if all the values in the cell domain were previusly assigned backtracking:   
             else:
                 
-                #reset visited domain for min domain cell
+                #1) reset visited domain for min domain cell
                 min_cell.visitedDomain=set()
                 
-                #print('[',end='')
-                #for x in list(visited_cells.queue):
-                    #print(x.getCordinates(), end=", ")
-                #print(']')
+                #2) get last visited cell and the cell in which the domain was modified by its assignement
+                last_visited_cell,domainRemovedCells=visited_cells.get()
                 
-                #get last visited cell
-                last_visited_cell=visited_cells.get()
-                
-                #cell is Empty now
+                #3) update last visited cell to a empty cell
                 last_visited_cell.isEmpty=True
                 
-                #update domains of row, col and square
-                self.__addDomainAll(last_visited_cell.i,last_visited_cell.j,last_visited_cell.value)
-                self.CP(last_visited_cell.value)
+                #4) add the value previusly assigned to the last visited cell to the cells previusly modified by its assignment
+                for cell in domainRemovedCells:
+                    cell.addDomain(last_visited_cell.value)
                 
-                #loop
+                #5) set the min domain cell as the last visited cell to explore the next value of its domain
                 min_cell=last_visited_cell
