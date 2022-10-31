@@ -1,16 +1,20 @@
-import sys
 from Sudoku import *
 
 def main():
     
+    l=[]
+    l.append(str)
     #CP and backtracking sudoku solver
-    sudoku=Sudoku("examples/hard/hard5.txt")
+    sudoku=Sudoku("examples/hard/hard1.txt")
     
-    sudoku.printSudoku()
+    print(sudoku,end='\n\n')
     
-    sudoku.sudokuSolverCP()
+    #sudoku.sudokuSolverCP()
+    sudoku.sudokuSolverGA()
     
-    sudoku.printSudoku()
+    #print(sudoku.fitness())
+    
+    print(sudoku)
     
     print(sudoku.checkSudoku())
 

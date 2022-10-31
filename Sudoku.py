@@ -1,32 +1,60 @@
+from __future__ import annotations
+import operator
+from Cell import Cell,INITIAL_DOMAIN
+
+import random
+
+import copy
+
 from queue import LifoQueue
-from Cell import Cell, INITIAL_DOMAIN
+
+from random import randint,choice, sample,shuffle
+from typing import Counter
+
 from tabulate import tabulate
 
 class Sudoku:
-    def __init__(self,filename: str):
+    def __init__(self,_sudoku=None):
         """
-        Sudoku constructor.
-        
+        Create a sudoku object from a file or from another sudoku object.
+
         Args:
-            filename (str): sudoku file.
+            _sudoku (str or Sudoku): .
         """
-        self.sudoku=[]
-        with open(filename) as file:
-            for i,line in enumerate(file):
-                line=line.strip('\n')
-                row=[]
-                self.sudoku.append(row)
-                for j,x in enumerate(line):
-                    if int(x)==0:
-                        row.append(Cell(i,j))
-                    else:
-                        row.append(Cell(i,j,_value=int(x)))
+        if _sudoku is None:
+            self.sudoku=[[] for x in range(9)]
+        elif isinstance(_sudoku,str):
+            self.sudoku=[]
+            try:
+                with open(_sudoku) as file:
+                    for i,line in enumerate(file):
+                        line=line.strip('\n')
+                        row=[]
+                        self.sudoku.append(row)
+                        for j,x in enumerate(line):
+                            if int(x)==0:
+                                row.append(Cell(i,j))
+                            else:
+                                row.append(Cell(i,j,_value=int(x)))
+            except FileNotFoundError as fnf_error:
+                print(fnf_error)
         
-    def printSudoku(self):
+        elif isinstance(_sudoku,Sudoku):
+            self.sudoku=copy.deepcopy(_sudoku.sudoku)
+        else:
+            raise TypeError("Expected a str or sudoku object, found "+str(type(_sudoku)))
+            
+    def __toNumbersList(self)->list[list[int]]:
+        numbers=[]
+        for row in self.sudoku:
+            numbers.append([cell.value if cell.value!=0 else '-' for cell in row])
+        return numbers
+    
+    def __str__(self):
         """
         Function that prints sudoku as a matrix of a better visualization.
         """
-        print(tabulate(self.sudoku,headers="keys",showindex=True,tablefmt="outline"))
+        print()
         
         if len(self.sudoku)!=9:
             print("Warning: malformed sudoku, number of rows is not 9")
@@ -34,9 +62,11 @@ class Sudoku:
         for n,row in enumerate(self.sudoku):
             if len(row)!=9:
                 print("Warning: malformed sudoku in row "+str(n))
+        
+        return tabulate(self.sudoku ,headers="keys",showindex=True,tablefmt="outline")
 
-
-    def __checkDigits(self,l: list[Cell]):
+    @staticmethod 
+    def __checkDigits(l: list[Cell]):
         """
         Functions that given a list of cells checks if all the 9 digits are present.
 
@@ -49,19 +79,26 @@ class Sudoku:
         
         domain=list(INITIAL_DOMAIN)
         
+        #print(l)
+        
         if len(l)!=9:
+            
             print("malformed sudoku",end='')
             return False
         
         for e in l:
             x=e.value
             if x>9 or x<1:
+                
                 print("outside domain boundaries",end='')
+                if x==0:
+                    print(" (sudoku is incomplete)",end='')
                 return False
             
             try:
                 domain.remove(x)
             except:
+                
                 print("multiple occurrences of same number ("+str(x)+")",end='')
                 return False;
         
@@ -100,7 +137,7 @@ class Sudoku:
                 print(" in row "+str(n))
                 return False
         #check cols
-        for n,col in enumerate(list(zip(*self.sudoku))[1:]):
+        for n,col in enumerate(list(zip(*self.sudoku))):
             if not self.__checkDigits(col):
                 print(" in col "+str(n))
                 return False
@@ -138,7 +175,7 @@ class Sudoku:
         if n<9:
             return 6
     
-    def __removeDomainRow(self,index:int, value:int)->set[Cell]:
+    def __removeDomainRow(self, index:int, value:int)->set[Cell]:
         """
         Function that removes from row of index 'index' the specific 'value'.
 
@@ -269,3 +306,151 @@ class Sudoku:
                 
                 #5) set the min domain cell as the last visited cell to explore the next value of its domain
                 min_cell=last_visited_cell
+    
+    @staticmethod
+    def __toNumbersList(l:list[Cell])->list[int]:
+        
+        return [cell.value for cell in l]
+    
+    def __fitness(self):
+        
+        duplicates=0
+            
+        #check cols
+        for col in list(zip(*self.sudoku)):
+            
+            numbers=Sudoku.__toNumbersList(col)
+            
+            for value in dict(Counter(numbers)).values():
+                    duplicates+=value-1
+                    
+        #check squares
+        for row_start in range(0,8,3):
+            for col_start in range(0,8,3):
+                
+                numbers=Sudoku.__toNumbersList(self.__square(row_start,col_start))
+                    
+                for value in dict(Counter(numbers)).values():
+                    duplicates+=value-1
+            
+        self.duplicates=duplicates
+        
+        #print(self)
+        #print(duplicates)
+        
+        return duplicates==0
+        
+    def randomizeSudokuAndScore(self):
+        board=self.sudoku
+        for r in range(9):
+            domain=list(INITIAL_DOMAIN)
+            for c in range(9):
+                if not board[r][c].isEmpty:
+                    domain.remove(board[r][c].value)
+            for c in range(9):
+                if board[r][c].isEmpty:
+                    board[r][c].value=choice(domain)
+                    #board[r][c].isEmpty=False
+                    domain.remove(board[r][c].value)
+        
+        self.__fitness()
+        
+    def __addNRandomRows(self, parent1: Sudoku, parent2: Sudoku, n_rows1: int):
+            
+        row_indexes=sample(range(9),n_rows1)
+            
+        for index in row_indexes:    
+            self.sudoku[index]=parent1.sudoku[index]
+        
+        for index in [index for index in range(9) if index not in row_indexes]:
+            self.sudoku[index]=parent2.sudoku[index]
+            
+    def __mutation(self):
+        mutation_row_index=randint(0,8)
+        mutation_row=self.sudoku[mutation_row_index]
+        
+        indexes=[x for x in range(9)]
+        for n,cell in enumerate(mutation_row):
+            if not cell.isEmpty:
+                indexes.remove(n)
+            
+        cell1,cell2=sample(indexes,2)
+        
+        temp=mutation_row[cell1]
+        mutation_row[cell1]=mutation_row[cell2]
+        mutation_row[cell2]=temp
+        
+        return self.__fitness()
+    
+    @staticmethod    
+    def getNewPopulation(population:list[Sudoku],population_size:int,n_children:int,mutation_rate:float):
+        
+        found=False
+        new_population=[]        
+        
+        while len(new_population)<population_size:
+            
+            children=[]
+            
+            parent1,parent2=sample(population,k=2)
+
+            for e in range(n_children):
+                
+                child=Sudoku()
+                
+                n_rows1=randint(1,9)
+                
+                child.__addNRandomRows(parent1, parent2, n_rows1)
+                
+                found=child.__fitness() or found
+                
+                #print(child)
+                print(child.duplicates)
+                
+                children.append(child)
+            
+            for e in range(int(n_children*mutation_rate)):
+                found=children[e].__mutation() or found
+            
+            shuffle(children)
+            new_population+=children
+        
+        #if min(new_population,key=lambda x:x.duplicates).duplicates < min(population,key=lambda x:x.duplicates).duplicates:
+        return new_population,found
+        #else:
+            #return Sudoku.getNewPopulation(population,population_size,n_children,mutation_rate)
+        
+        
+    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.75, n_children:int=4, mutation_rate:float=0.3, max__generations:int=100):
+        
+        #initial generation
+        population=[Sudoku(self) for x in range(population_size)]
+        
+        for sudoku in population:
+            sudoku.randomizeSudokuAndScore()
+        
+        generation=0
+        found=False
+        
+        while (not found):
+        
+            #random selection
+            new_population=sample(population,int(population_size*random_selection_rate))
+            
+            #selection    
+            population.sort(key=operator.attrgetter("duplicates"))
+            
+            for x in range(int(population_size*selection_rate)):
+                new_population.append(population[x])
+                
+            
+            shuffle(population)
+            
+            #generate new population
+            population,found=Sudoku.getNewPopulation(population,population_size,n_children,mutation_rate)
+            #print(min(population,key=lambda x:x.duplicates))
+            print(min(population,key=lambda x:x.duplicates).duplicates)
+            
+            generation+=1
+        
+        self.sudoku=min(population,key=lambda x:x.duplicates).sudoku          

@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 INITIAL_DOMAIN=set([x for x in range(1,10)])
 
@@ -33,7 +34,7 @@ class Cell:
             str: cell string.
         """
         if self.isEmpty:        
-            return "-"
+            return str(self.value) #"-"
         else:
             return str(self.value)
         
@@ -52,7 +53,7 @@ class Cell:
         else:
             return 10
         
-    def getCordinates(self):
+    def getCoordinates(self):
         return(self.i,self.j)
     
     def removeDomain(self,_n:int):
@@ -74,5 +75,9 @@ class Cell:
     def addDomain(self,_n):
         if self.isEmpty:
             self.domain.add(_n)
+            
+    #def __eq__(self, __o: Cell) -> bool:
+        #return self.value==__o.value
+        
             
     
