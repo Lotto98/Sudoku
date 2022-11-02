@@ -503,6 +503,7 @@ class Sudoku:
         
         satisfied_constraint=0
         
+        """
         #check rows
         for row in self.sudoku:
             domain=set(INITIAL_DOMAIN)
@@ -510,7 +511,7 @@ class Sudoku:
             numbers=Sudoku.__toNumbersSet(row)
             
             satisfied_constraint+=9-len(domain-numbers)
-                
+        """        
                     
         #check cols
         for col in list(zip(*self.sudoku)):
@@ -534,12 +535,33 @@ class Sudoku:
                     
     
     def randomizeSudokuAndScore(self):
+        """
         board=self.sudoku
         #for each empty cell choose a random value to assign to it
         for r in range(9): 
             for c in range(9):
                 if board[r][c].isEmpty:
                     board[r][c].value=choice([x for x in range(1,10)])
+        
+        #calculate score for generated sudoku
+        self.fitness()
+        """
+        board=self.sudoku
+        for r in range(9):
+            #initialization of row domain
+            domain=list(INITIAL_DOMAIN)
+            
+            #remove values from domain already set in row
+            for c in range(9):
+                if not board[r][c].isEmpty:
+                    domain.remove(board[r][c].value)
+            
+            #for each empty cell choose a random value to assign to it and remove that value from the domain.
+            for c in range(9):
+                if board[r][c].isEmpty:
+                    board[r][c].value=choice(domain)
+                    #board[r][c].isEmpty=False
+                    domain.remove(board[r][c].value)
         
         #calculate score for generated sudoku
         self.fitness()
@@ -551,10 +573,12 @@ class Sudoku:
                 if not self.sudoku[row][col].isEmpty:
                     full_cells+=1
         return full_cells
+        
     
     @staticmethod
     def getChild(parent1:Sudoku,parent2:Sudoku)->Sudoku:
         
+        """
         child=Sudoku()
         
         #get number of full cell to exclude them from crossover
@@ -595,9 +619,37 @@ class Sudoku:
         child.fitness()
         
         return child
-                            
-    def mutation(self,n_mutated_cells:int):
+        """
         
+        child=Sudoku()
+        
+        #at least one row from parent1 and at least one row from parent 2
+        crossover_row_index=randint(1,8)
+            
+        for index in range(crossover_row_index):
+            for c in range(9):
+                
+                cell=Cell(index,c,parent1.sudoku[index][c].value)
+                cell.isEmpty=True    
+                
+                child.sudoku[index].append(cell)
+        
+        for index in range(crossover_row_index,9):
+            for c in range(9):
+                
+                cell=Cell(index,c,parent2.sudoku[index][c].value)
+                cell.isEmpty=True    
+                
+                child.sudoku[index].append(cell)
+        
+        child.fitness()
+        
+        return child
+        
+                            
+    def mutation(self):
+        
+        """
         indexes_domain=[(x,y) for x in range(9) for y in range(9)]
         
         indexes=sample(indexes_domain,k=n_mutated_cells)
@@ -606,11 +658,32 @@ class Sudoku:
             self.sudoku[r][c].value=randint(1,9)
         
         self.fitness()
+        """
+        
+        #select a random row
+        mutation_row_index=randint(0,8)
+        mutation_row=self.sudoku[mutation_row_index]
+        
+        #from all possible indexes remove the indexes of the full cells
+        indexes=[x for x in range(9)]
+        for n,cell in enumerate(mutation_row):
+            if not cell.isEmpty:
+                indexes.remove(n)
+        
+        #sample 2 random indexes    
+        cell1,cell2=sample(indexes,2)
+        
+        #swap
+        temp=mutation_row[cell1]
+        mutation_row[cell1]=mutation_row[cell2]
+        mutation_row[cell2]=temp
+        
+        self.fitness()
         
     @staticmethod
     def isSolution(population:list[Sudoku]):
         for s in population:
-            if s.satisfied_constraint==(81*3):
+            if s.satisfied_constraint==(81*2):
                 return s
         return None
                                   
@@ -624,9 +697,11 @@ class Sudoku:
         
         solution=Sudoku.isSolution(old_population)
         if solution is not None:
-            print("solution found")
+            print("solution found at initial generation (generation 0)")
+            self.sudoku=copy.deepcopy(solution)
+            return
         
-        generation=0
+        generation=1
         
                    
         while True:
@@ -662,19 +737,21 @@ class Sudoku:
             shuffle(new_population) 
                
             for e in range(int(population_size*mutation_rate)):
-                new_population[e].mutation(n_mutated_cells)
+                new_population[e].mutation()
             shuffle(new_population)
             
             
-            print("max:",max(new_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint,"/ 243","generation:",generation)
+            print("max:",max(new_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint,"/ 162","generation:",generation)
             
             solution=Sudoku.isSolution(new_population)
             if solution is not None:
-                print("solution found")
-                break
+                print("solution found at generation "+str(generation))
+                self.sudoku=copy.deepcopy(solution.sudoku)
+                return
             
             old_population=new_population
             generation+=1
+            
         
         
         
