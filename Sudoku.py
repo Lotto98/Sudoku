@@ -1,7 +1,5 @@
 from __future__ import annotations
-from functools import total_ordering
 import operator
-from os import preadv
 from Cell import Cell,INITIAL_DOMAIN
 
 import random
@@ -471,7 +469,15 @@ class Sudoku:
     def fitness(self):
         
         duplicates=0
+        
+        #check rows
+        for row in self.sudoku:
             
+            numbers=Sudoku.__toNumbersList(row)
+            
+            for value in dict(Counter(numbers)).values():
+                    duplicates+=value-1
+                    
         #check cols
         for col in list(zip(*self.sudoku)):
             
@@ -557,28 +563,14 @@ class Sudoku:
         
         return child
                             
-    def mutation(self):
+    def mutation(self,n_mutated_cells:int):
         
-        #select a random row
-        mutation_row_index=randint(0,8)
-        mutation_row=self.sudoku[mutation_row_index]
+        indexes_domain=[(x,y) for x in range(9) for y in range(9)]
         
-        #from all possible indexes remove the indexes of the full cells
-        indexes=[x for x in range(9)]
-        for n,cell in enumerate(mutation_row):
-            if not cell.isEmpty:
-                indexes.remove(n)
+        indexes=sample(indexes_domain,k=n_mutated_cells)
         
-        #sample 2 random indexes    
-        cell1,cell2=sample(indexes,2)
-        
-        #swap
-        temp=mutation_row[cell1]
-        mutation_row[cell1]=mutation_row[cell2]
-        mutation_row[cell2]=temp
-        
-        #update row
-        self.sudoku[mutation_row_index]=mutation_row
+        for r,c in indexes:
+            self.sudoku[r][c].value=randint(1,9)
         
         self.fitness()
         
@@ -589,7 +581,7 @@ class Sudoku:
                 return s
         return None
                                   
-    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, max__generations:int=1000, restart_after_n:int=50):
+    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=1, mutation_rate:float=0.3, n_mutated_cells:int=4):
         
         #initial generation
         old_population=[Sudoku(self) for x in range(population_size)]
@@ -637,7 +629,7 @@ class Sudoku:
             shuffle(new_population) 
                
             for e in range(int(population_size*mutation_rate)):
-                new_population[e].mutation()
+                new_population[e].mutation(n_mutated_cells)
             shuffle(new_population)
             
             
