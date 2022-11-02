@@ -462,10 +462,11 @@ class Sudoku:
             
 """
     @staticmethod
-    def __toNumbersList(l:list[Cell])->list[int]:
+    def __toNumbersSet(l:list[Cell])->list[int]:
         
-        return [cell.value for cell in l]
+        return set([cell.value for cell in l])
     
+    """
     def fitness(self):
         
         duplicates=0
@@ -496,9 +497,41 @@ class Sudoku:
                     duplicates+=value-1
             
         self.duplicates=duplicates
+        """
+    
+    def fitness(self):
         
-        #print(self)
-        #print(duplicates)  
+        satisfied_constraint=0
+        
+        #check rows
+        for row in self.sudoku:
+            domain=set(INITIAL_DOMAIN)
+            
+            numbers=Sudoku.__toNumbersSet(row)
+            
+            satisfied_constraint+=9-len(domain-numbers)
+                
+                    
+        #check cols
+        for col in list(zip(*self.sudoku)):
+            domain=set(INITIAL_DOMAIN)
+            
+            numbers=Sudoku.__toNumbersSet(col)
+            
+            satisfied_constraint+=9-len(domain-numbers)
+                    
+        #check squares
+        for row_start in range(0,8,3):
+            for col_start in range(0,8,3):
+                
+                numbers=Sudoku.__toNumbersSet(self.__square(row_start,col_start))
+                domain=set(INITIAL_DOMAIN)
+            
+                satisfied_constraint+=9-len(domain-numbers)
+            
+        self.satisfied_constraint=satisfied_constraint
+        
+                    
     
     def randomizeSudokuAndScore(self):
         board=self.sudoku
@@ -577,11 +610,11 @@ class Sudoku:
     @staticmethod
     def isSolution(population:list[Sudoku]):
         for s in population:
-            if s.duplicates==0:
+            if s.satisfied_constraint==(81*3):
                 return s
         return None
                                   
-    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=1, mutation_rate:float=0.3, n_mutated_cells:int=4):
+    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_mutated_cells:int=2):
         
         #initial generation
         old_population=[Sudoku(self) for x in range(population_size)]
@@ -602,7 +635,7 @@ class Sudoku:
             population=sample(old_population,int(population_size*random_selection_rate))
             
             #selection    
-            old_population.sort(key=operator.attrgetter("duplicates"))
+            old_population.sort(key=operator.attrgetter("satisfied_constraint"),reverse=True)
             
             for x in range(int(population_size*selection_rate)):
                 population.append(old_population[x])
@@ -633,7 +666,7 @@ class Sudoku:
             shuffle(new_population)
             
             
-            print("min:",min(new_population,key=operator.attrgetter("duplicates")).duplicates,"generation:",generation)
+            print("max:",max(new_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint,"/ 243","generation:",generation)
             
             solution=Sudoku.isSolution(new_population)
             if solution is not None:
