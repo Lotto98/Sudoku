@@ -1,5 +1,7 @@
 from __future__ import annotations
+from functools import total_ordering
 import operator
+from os import preadv
 from Cell import Cell,INITIAL_DOMAIN
 
 import random
@@ -43,12 +45,6 @@ class Sudoku:
             self.sudoku=copy.deepcopy(_sudoku.sudoku)
         else:
             raise TypeError("Expected a str or sudoku object, found "+str(type(_sudoku)))
-            
-    def __toNumbersList(self)->list[list[int]]:
-        numbers=[]
-        for row in self.sudoku:
-            numbers.append([cell.value if cell.value!=0 else '-' for cell in row])
-        return numbers
     
     def __str__(self):
         """
@@ -306,7 +302,7 @@ class Sudoku:
                 
                 #5) set the min domain cell as the last visited cell to explore the next value of its domain
                 min_cell=last_visited_cell
-    
+    """
     @staticmethod
     def __toNumbersList(l:list[Cell])->list[int]:
         
@@ -343,114 +339,323 @@ class Sudoku:
     def randomizeSudokuAndScore(self):
         board=self.sudoku
         for r in range(9):
+            #initialization of row domain
             domain=list(INITIAL_DOMAIN)
+            
+            #remove values from domain already set in row
             for c in range(9):
                 if not board[r][c].isEmpty:
                     domain.remove(board[r][c].value)
+            
+            #for each empty cell choose a random value to assign to it and remove that value from the domain.
             for c in range(9):
                 if board[r][c].isEmpty:
                     board[r][c].value=choice(domain)
                     #board[r][c].isEmpty=False
                     domain.remove(board[r][c].value)
         
+        #calculate score for generated sudoku
         self.__fitness()
         
-    def __addNRandomRows(self, parent1: Sudoku, parent2: Sudoku, n_rows1: int):
+    def __addNRandomRows(self, parent1: Sudoku, parent2: Sudoku):
+        
+        #at least one row from parent1 and at least one row from parent 2
+        crossover_row_index=randint(1,8)
             
-        row_indexes=sample(range(9),n_rows1)
-            
-        for index in row_indexes:    
+        for index in range(crossover_row_index):    
             self.sudoku[index]=parent1.sudoku[index]
         
-        for index in [index for index in range(9) if index not in row_indexes]:
+        for index in range(crossover_row_index,9):
             self.sudoku[index]=parent2.sudoku[index]
             
     def __mutation(self):
+        #select a random row
         mutation_row_index=randint(0,8)
         mutation_row=self.sudoku[mutation_row_index]
         
+        #from all possible indexes remove the indexes of the full cells
         indexes=[x for x in range(9)]
         for n,cell in enumerate(mutation_row):
             if not cell.isEmpty:
                 indexes.remove(n)
-            
+        
+        #sample 2 random indexes    
         cell1,cell2=sample(indexes,2)
         
+        #swap
         temp=mutation_row[cell1]
         mutation_row[cell1]=mutation_row[cell2]
         mutation_row[cell2]=temp
         
+        #update row
+        self.sudoku[mutation_row_index]=mutation_row
+        
         return self.__fitness()
-    
-    @staticmethod    
-    def getNewPopulation(population:list[Sudoku],population_size:int,n_children:int,mutation_rate:float):
-        
-        found=False
-        new_population=[]        
-        
-        while len(new_population)<population_size:
-            
-            children=[]
-            
-            parent1,parent2=sample(population,k=2)
-
-            for e in range(n_children):
-                
-                child=Sudoku()
-                
-                n_rows1=randint(1,9)
-                
-                child.__addNRandomRows(parent1, parent2, n_rows1)
-                
-                found=child.__fitness() or found
-                
-                #print(child)
-                print(child.duplicates)
-                
-                children.append(child)
-            
-            for e in range(int(n_children*mutation_rate)):
-                found=children[e].__mutation() or found
-            
-            shuffle(children)
-            new_population+=children
-        
-        #if min(new_population,key=lambda x:x.duplicates).duplicates < min(population,key=lambda x:x.duplicates).duplicates:
-        return new_population,found
-        #else:
-            #return Sudoku.getNewPopulation(population,population_size,n_children,mutation_rate)
         
         
-    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.75, n_children:int=4, mutation_rate:float=0.3, max__generations:int=100):
-        
-        #initial generation
-        population=[Sudoku(self) for x in range(population_size)]
-        
-        for sudoku in population:
-            sudoku.randomizeSudokuAndScore()
+    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, max__generations:int=1000, restart_after_n:int=50):
         
         generation=0
-        found=False
         
-        while (not found):
+        while(generation<max__generations):
+            
+            #initial generation
+            old_population=[Sudoku(self) for x in range(population_size)]
+            
+            for sudoku in old_population:
+                sudoku.randomizeSudokuAndScore()
+    
+            found=False
+            best_score=1000
+            restart=0
+            
+            while (not found):
+            
+                #random selection
+                population=sample(old_population,int(population_size*random_selection_rate))
+                
+                #selection    
+                old_population.sort(key=operator.attrgetter("duplicates"))
+                
+                for x in range(int(population_size*selection_rate)):
+                    population.append(old_population[x])
+                    
+                shuffle(population)
+                
+                children=[]
+            
+                parent1,parent2=sample(population,k=2)
+
+                for e in range(n_children):
+                    
+                    child.__addNRandomRows(parent1, parent2)
+                    
+                    found=child.__fitness() or found
+
+                    children.append(child)
+                
+                children.append(parent1)
+                children.append(parent2)
+                children.sort(key=operator.attrgetter("duplicates"))
+                
+                population.remove(parent1)
+                population.remove(parent2)
+                
+                population.append(children[0])
+                population.append(children[1])
+                
+                for e in range(int(population_size*mutation_rate)):
+                    found=population[e].__mutation() or found
+                
+                print(min(population,key=lambda x:x.duplicates).duplicates)
+                
+                if min(population,key=operator.attrgetter("duplicates")).duplicates<best_score:
+                    best_score=min(population,key=operator.attrgetter("duplicates")).duplicates
+                    restart=0
+                
+                if restart>restart_after_n:
+                    break
+                
+                generation+=1
+                restart+=1
+                old_population=population
+            
+            print("restarted")
+            
+"""
+    @staticmethod
+    def __toNumbersList(l:list[Cell])->list[int]:
         
+        return [cell.value for cell in l]
+    
+    def fitness(self):
+        
+        duplicates=0
+            
+        #check cols
+        for col in list(zip(*self.sudoku)):
+            
+            numbers=Sudoku.__toNumbersList(col)
+            
+            for value in dict(Counter(numbers)).values():
+                    duplicates+=value-1
+                    
+        #check squares
+        for row_start in range(0,8,3):
+            for col_start in range(0,8,3):
+                
+                numbers=Sudoku.__toNumbersList(self.__square(row_start,col_start))
+                    
+                for value in dict(Counter(numbers)).values():
+                    duplicates+=value-1
+            
+        self.duplicates=duplicates
+        
+        #print(self)
+        #print(duplicates)  
+    
+    def randomizeSudokuAndScore(self):
+        board=self.sudoku
+        #for each empty cell choose a random value to assign to it
+        for r in range(9): 
+            for c in range(9):
+                if board[r][c].isEmpty:
+                    board[r][c].value=choice([x for x in range(1,10)])
+        
+        #calculate score for generated sudoku
+        self.fitness()
+
+    def numberFullCell(self):
+        full_cells=0
+        for row in range(9):
+            for col in range(9):
+                if not self.sudoku[row][col].isEmpty:
+                    full_cells+=1
+        return full_cells
+    
+    @staticmethod
+    def getChild(parent1:Sudoku,parent2:Sudoku)->Sudoku:
+        
+        child=Sudoku()
+        
+        #get number of full cell to exclude them from crossover
+        n_full_cells=parent1.numberFullCell()
+        
+        #at least one Cell from parent1 and at least one Cell from parent2 without counting full cells
+        n_cells_fromParent1=randint(1,80-n_full_cells)
+        
+        #for each row
+        for r in range(9):
+            
+            #create a row and append it to sudoku
+            row=[]
+            child.sudoku[r]=row
+            
+            #for each cell in row
+            for c in range(9):
+                
+                #create cell and append it to row
+                cell=Cell(r,c,0)
+                row.append(cell)
+                
+                #if the cell is empty choose a cell from parent 1 or parent 2
+                if parent1.sudoku[r][c].isEmpty:
+                    
+                    if n_cells_fromParent1>=0:
+                        
+                        cell.value=parent1.sudoku[r][c].value
+                        n_cells_fromParent1-=1
+                    else:
+                        cell.value=parent2.sudoku[r][c].value
+                        
+                else:
+                    #if the cell is full, simply copy it
+                    cell.value=parent1.sudoku[r][c].value
+                    cell.isEmpty=False
+        
+        child.fitness()
+        
+        return child
+                            
+    def mutation(self):
+        
+        #select a random row
+        mutation_row_index=randint(0,8)
+        mutation_row=self.sudoku[mutation_row_index]
+        
+        #from all possible indexes remove the indexes of the full cells
+        indexes=[x for x in range(9)]
+        for n,cell in enumerate(mutation_row):
+            if not cell.isEmpty:
+                indexes.remove(n)
+        
+        #sample 2 random indexes    
+        cell1,cell2=sample(indexes,2)
+        
+        #swap
+        temp=mutation_row[cell1]
+        mutation_row[cell1]=mutation_row[cell2]
+        mutation_row[cell2]=temp
+        
+        #update row
+        self.sudoku[mutation_row_index]=mutation_row
+        
+        self.fitness()
+        
+    @staticmethod
+    def isSolution(population:list[Sudoku]):
+        for s in population:
+            if s.duplicates==0:
+                return s
+        return None
+                                  
+    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, max__generations:int=1000, restart_after_n:int=50):
+        
+        #initial generation
+        old_population=[Sudoku(self) for x in range(population_size)]
+        
+        for sudoku in old_population:
+            sudoku.randomizeSudokuAndScore()
+        
+        solution=Sudoku.isSolution(old_population)
+        if solution is not None:
+            print("solution found")
+        
+        generation=0
+        
+                   
+        while True:
+            
             #random selection
-            new_population=sample(population,int(population_size*random_selection_rate))
+            population=sample(old_population,int(population_size*random_selection_rate))
             
             #selection    
-            population.sort(key=operator.attrgetter("duplicates"))
+            old_population.sort(key=operator.attrgetter("duplicates"))
             
             for x in range(int(population_size*selection_rate)):
-                new_population.append(population[x])
+                population.append(old_population[x])
                 
-            
             shuffle(population)
             
-            #generate new population
-            population,found=Sudoku.getNewPopulation(population,population_size,n_children,mutation_rate)
-            #print(min(population,key=lambda x:x.duplicates))
-            print(min(population,key=lambda x:x.duplicates).duplicates)
             
+            new_population=[copy.deepcopy(s) for s in population]
+            
+            while(len(new_population)<population_size):
+            
+                children=[]
+                    
+                parent1,parent2=sample(population,k=2)
+
+                for _ in range(n_children):
+                    
+                    child=Sudoku.getChild(parent1,parent2)
+                    
+                    children.append(child)
+                
+                new_population+=children
+            
+            shuffle(new_population) 
+               
+            for e in range(int(population_size*mutation_rate)):
+                new_population[e].mutation()
+            shuffle(new_population)
+            
+            
+            print("min:",min(new_population,key=operator.attrgetter("duplicates")).duplicates,"generation:",generation)
+            
+            solution=Sudoku.isSolution(new_population)
+            if solution is not None:
+                print("solution found")
+                break
+            
+            old_population=new_population
             generation+=1
         
-        self.sudoku=min(population,key=lambda x:x.duplicates).sudoku          
+        
+        
+        
+        
+        
+          
+        
+    
