@@ -690,7 +690,9 @@ class Sudoku:
                 return s
         return None
                                   
-    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_generations_no_improvement:int=50):
+    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_generations_no_improvement:int=100):
+        
+        iteration=0
         
         while True:
             
@@ -754,7 +756,7 @@ class Sudoku:
                 
                 solution=Sudoku.isSolution(new_population)
                 if solution is not None:
-                    print("\nsolution found at generation "+str(generation))
+                    print("\nsolution found at regeneration: "+str(iteration)+" at generation "+str(generation))
                     self.sudoku=copy.deepcopy(solution.sudoku)
                     return
                 
@@ -767,8 +769,17 @@ class Sudoku:
                 
                 restart+=1
                 if restart>n_generations_no_improvement:
-                    print("restarting... ")
+                    
+                    iteration+=1
+                    
+                    print("\nreached a possible local minimum")
+                    
+                    print("best solution for this iteration: ")
                     print(max(new_population,key=operator.attrgetter("satisfied_constraint")))
+                    print(max(new_population,key=operator.attrgetter("satisfied_constraint")).checkSudoku())
+                    
+                    print("\nrestarting... ")
+                    
                     del population,old_population,new_population,children,child,parent1,parent2,sudoku
                     gc.collect()
                     break
