@@ -1,4 +1,5 @@
 from __future__ import annotations
+import gc
 import operator
 from Cell import Cell,INITIAL_DOMAIN
 
@@ -630,7 +631,8 @@ class Sudoku:
             for c in range(9):
                 
                 cell=Cell(index,c,parent1.sudoku[index][c].value)
-                cell.isEmpty=True    
+                
+                cell.isEmpty=parent1.sudoku[index][c].isEmpty
                 
                 child.sudoku[index].append(cell)
         
@@ -638,7 +640,8 @@ class Sudoku:
             for c in range(9):
                 
                 cell=Cell(index,c,parent2.sudoku[index][c].value)
-                cell.isEmpty=True    
+                
+                cell.isEmpty=parent2.sudoku[index][c].isEmpty   
                 
                 child.sudoku[index].append(cell)
         
@@ -687,70 +690,88 @@ class Sudoku:
                 return s
         return None
                                   
-    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_mutated_cells:int=2):
+    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_generations_no_improvement:int=50):
         
-        #initial generation
-        old_population=[Sudoku(self) for x in range(population_size)]
-        
-        for sudoku in old_population:
-            sudoku.randomizeSudokuAndScore()
-        
-        solution=Sudoku.isSolution(old_population)
-        if solution is not None:
-            print("solution found at initial generation (generation 0)")
-            self.sudoku=copy.deepcopy(solution)
-            return
-        
-        generation=1
-        
-                   
         while True:
             
-            #random selection
-            population=sample(old_population,int(population_size*random_selection_rate))
+            #initial generation
+            old_population=[Sudoku(self) for x in range(population_size)]
             
-            #selection    
-            old_population.sort(key=operator.attrgetter("satisfied_constraint"),reverse=True)
+            for sudoku in old_population:
+                sudoku.randomizeSudokuAndScore()
             
-            for x in range(int(population_size*selection_rate)):
-                population.append(old_population[x])
-                
-            shuffle(population)
-            
-            
-            new_population=[copy.deepcopy(s) for s in population]
-            
-            while(len(new_population)<population_size):
-            
-                children=[]
-                    
-                parent1,parent2=sample(population,k=2)
-
-                for _ in range(n_children):
-                    
-                    child=Sudoku.getChild(parent1,parent2)
-                    
-                    children.append(child)
-                
-                new_population+=children
-            
-            shuffle(new_population) 
-               
-            for e in range(int(population_size*mutation_rate)):
-                new_population[e].mutation()
-            shuffle(new_population)
-            
-            
-            print("max:",max(new_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint,"/ 162","generation:",generation)
-            
-            solution=Sudoku.isSolution(new_population)
+            solution=Sudoku.isSolution(old_population)
             if solution is not None:
-                print("solution found at generation "+str(generation))
-                self.sudoku=copy.deepcopy(solution.sudoku)
+                print("solution found at initial generation (generation 0)")
+                self.sudoku=copy.deepcopy(solution)
                 return
             
-            old_population=new_population
-            generation+=1
+            generation=1
+            
+            restart=0
+            
+            best_fit=max(old_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint
+                    
+            while True:
+                
+                #random selection
+                population=sample(old_population,int(population_size*random_selection_rate))
+                
+                #selection    
+                old_population.sort(key=operator.attrgetter("satisfied_constraint"),reverse=True)
+                
+                for x in range(int(population_size*selection_rate)):
+                    population.append(old_population[x])
+                    
+                shuffle(population)
+                
+                
+                new_population=[copy.deepcopy(s) for s in population]
+                
+                while(len(new_population)<population_size):
+                
+                    children=[]
+                        
+                    parent1,parent2=sample(population,k=2)
+
+                    for _ in range(n_children):
+                        
+                        child=Sudoku.getChild(parent1,parent2)
+                        
+                        children.append(child)
+                    
+                    new_population+=children
+                
+                shuffle(new_population) 
+                
+                for e in range(int(population_size*mutation_rate)):
+                    new_population[e].mutation()
+                shuffle(new_population)
+                
+                fit=max(new_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint
+                
+                print("max:",fit,"/ 162","generation:",generation)
+                
+                solution=Sudoku.isSolution(new_population)
+                if solution is not None:
+                    print("\nsolution found at generation "+str(generation))
+                    self.sudoku=copy.deepcopy(solution.sudoku)
+                    return
+                
+                if fit>best_fit:
+                    best_fit=fit
+                    restart=0
+                
+                old_population=new_population
+                generation+=1
+                
+                restart+=1
+                if restart>n_generations_no_improvement:
+                    print("restarting... ")
+                    print(max(new_population,key=operator.attrgetter("satisfied_constraint")))
+                    del population,old_population,new_population,children,child,parent1,parent2,sudoku
+                    gc.collect()
+                    break
             
         
         

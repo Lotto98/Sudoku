@@ -5,7 +5,7 @@ def main():
     l=[]
     l.append(str)
     #CP and backtracking sudoku solver
-    sudoku=Sudoku("examples/easy/easy1.txt")
+    sudoku=Sudoku("examples/hard/hard1.txt")
     
     print(sudoku,end='\n\n')
     
