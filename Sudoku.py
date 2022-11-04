@@ -707,15 +707,15 @@ class Sudoku:
                 return s
         return None
                                   
-    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.5, n_generations_no_improvement:int=30):
+    def sudokuSolverGA(self, population_size:int=1500, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.4, n_mutation_swap:int=4, n_generations_no_improvement:int=50):
         
         iteration=1
         
         while True:
             
             #initial generation
-            old_population=[Sudoku(self) for x in range(population_size)]
             
+            old_population=[Sudoku(self) for x in range(population_size)]
             for sudoku in old_population:
                 sudoku.randomizeSudokuAndScore()
             
@@ -755,20 +755,19 @@ class Sudoku:
 
                     for _ in range(n_children):
                         
-                        child=Sudoku.getChild(parent1,parent2)
                         
-                        children.append(child)
-                    
+                        child=Sudoku.getChild(parent1,parent2)    
+                        
+                        #children.append(max([child,parent1,parent2], key=operator.attrgetter("satisfied_constraint")))
+                        children.append(child)    
+                        
                     new_population+=children
                 
-                shuffle(new_population) 
+                shuffle(new_population)
                 
                 for e in range(int(population_size*mutation_rate)):
-                    new_population[e].mutation()
-                    new_population[e].mutation()
-                    new_population[e].mutation()
-                    new_population[e].mutation()
-                    new_population[e].mutation()
+                    for _ in range(n_mutation_swap):
+                        new_population[e].mutation()
                     
                 shuffle(new_population)
                 
@@ -776,7 +775,8 @@ class Sudoku:
                 
                 print("max:",fit,"/ 162 ",
                       "average:", "{:3.2f}".format(sum([x.satisfied_constraint for x in new_population])/len(new_population)),
-                      " generation:",generation)
+                      " generation:",generation,
+                      " restart: ",restart )
                 
                 solution=Sudoku.isSolution(new_population)
                 if solution is not None:
@@ -805,16 +805,6 @@ class Sudoku:
                     
                     print("\nrestarting... ")
                     
-                    del population,old_population,new_population,children,child,parent1,parent2,sudoku
+                    del population,new_population,old_population,children,child,parent1,parent2
                     gc.collect()
-                    break
-            
-        
-        
-        
-        
-        
-        
-          
-        
-    
+                    break  
