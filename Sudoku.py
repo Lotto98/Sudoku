@@ -3,7 +3,7 @@ import gc
 import operator
 from Cell import Cell,INITIAL_DOMAIN
 
-import random
+import numpy as np
 
 import copy
 
@@ -301,6 +301,23 @@ class Sudoku:
                 
                 #5) set the min domain cell as the last visited cell to explore the next value of its domain
                 min_cell=last_visited_cell
+    
+    def toNumpy(self):
+        
+        sudoku_values=[]
+        mask=[]
+        
+        for row in self.sudoku:
+            for cell in row:
+                sudoku_values.append(cell.value)
+                if cell.isEmpty:
+                    mask.append(True)
+                else:
+                    mask.append(False)
+        
+        return np.array(sudoku_values,),np.array(mask)
+    
+        
     """
     @staticmethod
     def __toNumbersList(l:list[Cell])->list[int]:
@@ -662,7 +679,7 @@ class Sudoku:
         
         self.fitness()
         """
-        
+
         #select a random row
         mutation_row_index=randint(0,8)
         mutation_row=self.sudoku[mutation_row_index]
@@ -690,9 +707,9 @@ class Sudoku:
                 return s
         return None
                                   
-    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_generations_no_improvement:int=100):
+    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.5, n_generations_no_improvement:int=30):
         
-        iteration=0
+        iteration=1
         
         while True:
             
@@ -748,15 +765,22 @@ class Sudoku:
                 
                 for e in range(int(population_size*mutation_rate)):
                     new_population[e].mutation()
+                    new_population[e].mutation()
+                    new_population[e].mutation()
+                    new_population[e].mutation()
+                    new_population[e].mutation()
+                    
                 shuffle(new_population)
                 
                 fit=max(new_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint
                 
-                print("max:",fit,"/ 162","generation:",generation)
+                print("max:",fit,"/ 162 ",
+                      "average:", "{:3.2f}".format(sum([x.satisfied_constraint for x in new_population])/len(new_population)),
+                      " generation:",generation)
                 
                 solution=Sudoku.isSolution(new_population)
                 if solution is not None:
-                    print("\nsolution found at regeneration: "+str(iteration)+" at generation "+str(generation))
+                    print("\nsolution found at regeneration "+str(iteration)+" at generation "+str(generation))
                     self.sudoku=copy.deepcopy(solution.sudoku)
                     return
                 
@@ -768,6 +792,7 @@ class Sudoku:
                 generation+=1
                 
                 restart+=1
+                
                 if restart>n_generations_no_improvement:
                     
                     iteration+=1
