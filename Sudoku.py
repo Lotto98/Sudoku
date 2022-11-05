@@ -1,6 +1,7 @@
 from __future__ import annotations
 import gc
 import operator
+import time
 from Cell import Cell,INITIAL_DOMAIN
 
 import numpy as np
@@ -37,11 +38,13 @@ class Sudoku:
                                 row.append(Cell(i,j))
                             else:
                                 row.append(Cell(i,j,_value=int(x)))
+                self.finished=False
             except FileNotFoundError as fnf_error:
                 print(fnf_error)
         
         elif isinstance(_sudoku,Sudoku):
             self.sudoku=copy.deepcopy(_sudoku.sudoku)
+            self.finished=False
         else:
             raise TypeError("Expected a str or sudoku object, found "+str(type(_sudoku)))
     
@@ -315,7 +318,7 @@ class Sudoku:
                 else:
                     mask.append(False)
         
-        return np.array(sudoku_values,),np.array(mask)
+        return np.array(sudoku_values,dtype=int).reshape(9,9),np.array(mask,dtype=int).reshape(9,9)
     
         
     """
@@ -550,6 +553,8 @@ class Sudoku:
             
         self.satisfied_constraint=satisfied_constraint
         
+        #print(satisfied_constraint)
+        
                     
     
     def randomizeSudokuAndScore(self):
@@ -707,14 +712,13 @@ class Sudoku:
                 return s
         return None
                                   
-    def sudokuSolverGA(self, population_size:int=1500, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.4, n_mutation_swap:int=4, n_generations_no_improvement:int=50):
+    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_mutation_swap:int=1, n_generations_no_improvement:int=30):
         
         iteration=1
         
         while True:
             
             #initial generation
-            
             old_population=[Sudoku(self) for x in range(population_size)]
             for sudoku in old_population:
                 sudoku.randomizeSudokuAndScore()
@@ -723,6 +727,7 @@ class Sudoku:
             if solution is not None:
                 print("solution found at initial generation (generation 0)")
                 self.sudoku=copy.deepcopy(solution)
+                self.finished=True
                 return
             
             generation=1
@@ -733,6 +738,8 @@ class Sudoku:
                     
             while True:
                 
+                start_time = time.perf_counter()
+                 
                 #random selection
                 population=sample(old_population,int(population_size*random_selection_rate))
                 
@@ -782,6 +789,7 @@ class Sudoku:
                 if solution is not None:
                     print("\nsolution found at regeneration "+str(iteration)+" at generation "+str(generation))
                     self.sudoku=copy.deepcopy(solution.sudoku)
+                    self.finished=True
                     return
                 
                 if fit>best_fit:
@@ -792,6 +800,10 @@ class Sudoku:
                 generation+=1
                 
                 restart+=1
+                
+                end_time = time.perf_counter()
+                execution_time = end_time - start_time
+                #print(f"The execution time is: {execution_time}")
                 
                 if restart>n_generations_no_improvement:
                     

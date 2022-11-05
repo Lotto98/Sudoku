@@ -1,16 +1,21 @@
+import threading
 from Sudoku import *
-
+from solver import sudokuSolverGA_NP
+    
+            
 def main():
     
-    l=[]
-    l.append(str)
+    path="examples/normal/normal1.txt"
+    
     #CP and backtracking sudoku solver
-    sudoku=Sudoku("examples/hard/hard1.txt")
+    sudoku=Sudoku(path)
     
     print(sudoku,end='\n\n')
     
     #sudoku.sudokuSolverCP()
     sudoku.sudokuSolverGA()
+    #sudokuSolverGA_NP(sudoku)
+    #sudoku=multithread(path,5)
     
     print(sudoku)
     
