@@ -27,21 +27,17 @@ class Sudoku:
             self.sudoku=[[] for x in range(9)]
         elif isinstance(_sudoku,str):
             self.sudoku=[]
-            try:
-                with open(_sudoku) as file:
-                    for i,line in enumerate(file):
-                        line=line.strip('\n')
-                        row=[]
-                        self.sudoku.append(row)
-                        for j,x in enumerate(line):
-                            if int(x)==0:
-                                row.append(Cell(i,j))
-                            else:
-                                row.append(Cell(i,j,_value=int(x)))
-                self.finished=False
-            except FileNotFoundError as fnf_error:
-                print(fnf_error)
-        
+            with open(_sudoku) as file:
+                for i,line in enumerate(file):
+                    line=line.strip('\n')
+                    row=[]
+                    self.sudoku.append(row)
+                    for j,x in enumerate(line):
+                        if int(x)==0:
+                            row.append(Cell(i,j))
+                        else:
+                            row.append(Cell(i,j,_value=int(x)))
+            self.finished=False
         elif isinstance(_sudoku,Sudoku):
             self.sudoku=copy.deepcopy(_sudoku.sudoku)
             self.finished=False
@@ -320,205 +316,16 @@ class Sudoku:
         
         return np.array(sudoku_values,dtype=int).reshape(9,9),np.array(mask,dtype=int).reshape(9,9)
     
-        
-    """
-    @staticmethod
-    def __toNumbersList(l:list[Cell])->list[int]:
-        
-        return [cell.value for cell in l]
-    
-    def __fitness(self):
-        
-        duplicates=0
-            
-        #check cols
-        for col in list(zip(*self.sudoku)):
-            
-            numbers=Sudoku.__toNumbersList(col)
-            
-            for value in dict(Counter(numbers)).values():
-                    duplicates+=value-1
-                    
-        #check squares
-        for row_start in range(0,8,3):
-            for col_start in range(0,8,3):
-                
-                numbers=Sudoku.__toNumbersList(self.__square(row_start,col_start))
-                    
-                for value in dict(Counter(numbers)).values():
-                    duplicates+=value-1
-            
-        self.duplicates=duplicates
-        
-        #print(self)
-        #print(duplicates)
-        
-        return duplicates==0
-        
-    def randomizeSudokuAndScore(self):
+    def toFile(self,file:str):
         board=self.sudoku
-        for r in range(9):
-            #initialization of row domain
-            domain=list(INITIAL_DOMAIN)
-            
-            #remove values from domain already set in row
-            for c in range(9):
-                if not board[r][c].isEmpty:
-                    domain.remove(board[r][c].value)
-            
-            #for each empty cell choose a random value to assign to it and remove that value from the domain.
-            for c in range(9):
-                if board[r][c].isEmpty:
-                    board[r][c].value=choice(domain)
-                    #board[r][c].isEmpty=False
-                    domain.remove(board[r][c].value)
-        
-        #calculate score for generated sudoku
-        self.__fitness()
-        
-    def __addNRandomRows(self, parent1: Sudoku, parent2: Sudoku):
-        
-        #at least one row from parent1 and at least one row from parent 2
-        crossover_row_index=randint(1,8)
-            
-        for index in range(crossover_row_index):    
-            self.sudoku[index]=parent1.sudoku[index]
-        
-        for index in range(crossover_row_index,9):
-            self.sudoku[index]=parent2.sudoku[index]
-            
-    def __mutation(self):
-        #select a random row
-        mutation_row_index=randint(0,8)
-        mutation_row=self.sudoku[mutation_row_index]
-        
-        #from all possible indexes remove the indexes of the full cells
-        indexes=[x for x in range(9)]
-        for n,cell in enumerate(mutation_row):
-            if not cell.isEmpty:
-                indexes.remove(n)
-        
-        #sample 2 random indexes    
-        cell1,cell2=sample(indexes,2)
-        
-        #swap
-        temp=mutation_row[cell1]
-        mutation_row[cell1]=mutation_row[cell2]
-        mutation_row[cell2]=temp
-        
-        #update row
-        self.sudoku[mutation_row_index]=mutation_row
-        
-        return self.__fitness()
-        
-        
-    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, max__generations:int=1000, restart_after_n:int=50):
-        
-        generation=0
-        
-        while(generation<max__generations):
-            
-            #initial generation
-            old_population=[Sudoku(self) for x in range(population_size)]
-            
-            for sudoku in old_population:
-                sudoku.randomizeSudokuAndScore()
+        with open(file, "w") as f:
+            for row in board:
+                f.writelines([str(number) for number in Sudoku.__toNumbersSet(row)]+["\n"])
     
-            found=False
-            best_score=1000
-            restart=0
-            
-            while (not found):
-            
-                #random selection
-                population=sample(old_population,int(population_size*random_selection_rate))
-                
-                #selection    
-                old_population.sort(key=operator.attrgetter("duplicates"))
-                
-                for x in range(int(population_size*selection_rate)):
-                    population.append(old_population[x])
-                    
-                shuffle(population)
-                
-                children=[]
-            
-                parent1,parent2=sample(population,k=2)
-
-                for e in range(n_children):
-                    
-                    child.__addNRandomRows(parent1, parent2)
-                    
-                    found=child.__fitness() or found
-
-                    children.append(child)
-                
-                children.append(parent1)
-                children.append(parent2)
-                children.sort(key=operator.attrgetter("duplicates"))
-                
-                population.remove(parent1)
-                population.remove(parent2)
-                
-                population.append(children[0])
-                population.append(children[1])
-                
-                for e in range(int(population_size*mutation_rate)):
-                    found=population[e].__mutation() or found
-                
-                print(min(population,key=lambda x:x.duplicates).duplicates)
-                
-                if min(population,key=operator.attrgetter("duplicates")).duplicates<best_score:
-                    best_score=min(population,key=operator.attrgetter("duplicates")).duplicates
-                    restart=0
-                
-                if restart>restart_after_n:
-                    break
-                
-                generation+=1
-                restart+=1
-                old_population=population
-            
-            print("restarted")
-            
-"""
     @staticmethod
     def __toNumbersSet(l:list[Cell])->list[int]:
         
         return set([cell.value for cell in l])
-    
-    """
-    def fitness(self):
-        
-        duplicates=0
-        
-        #check rows
-        for row in self.sudoku:
-            
-            numbers=Sudoku.__toNumbersList(row)
-            
-            for value in dict(Counter(numbers)).values():
-                    duplicates+=value-1
-                    
-        #check cols
-        for col in list(zip(*self.sudoku)):
-            
-            numbers=Sudoku.__toNumbersList(col)
-            
-            for value in dict(Counter(numbers)).values():
-                    duplicates+=value-1
-                    
-        #check squares
-        for row_start in range(0,8,3):
-            for col_start in range(0,8,3):
-                
-                numbers=Sudoku.__toNumbersList(self.__square(row_start,col_start))
-                    
-                for value in dict(Counter(numbers)).values():
-                    duplicates+=value-1
-            
-        self.duplicates=duplicates
-        """
     
     def fitness(self):
         
@@ -780,10 +587,12 @@ class Sudoku:
                 
                 fit=max(new_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint
                 
+                """
                 print("max:",fit,"/ 162 ",
                       "average:", "{:3.2f}".format(sum([x.satisfied_constraint for x in new_population])/len(new_population)),
                       " generation:",generation,
                       " restart: ",restart )
+                """
                 
                 solution=Sudoku.isSolution(new_population)
                 if solution is not None:
@@ -808,7 +617,7 @@ class Sudoku:
                 if restart>n_generations_no_improvement:
                     
                     iteration+=1
-                    
+                    """
                     print("\nreached a possible local minimum")
                     
                     print("best solution for this iteration: ")
@@ -816,7 +625,7 @@ class Sudoku:
                     print(max(new_population,key=operator.attrgetter("satisfied_constraint")).checkSudoku())
                     
                     print("\nrestarting... ")
-                    
+                    """
                     del population,new_population,old_population,children,child,parent1,parent2
                     gc.collect()
                     break  
