@@ -62,20 +62,20 @@ def test():
     
 def main():
     
-    test()
+    #test()
     
-    """
-    path="examples/normal/normal1.txt"
+    
+    path="examples/hard/hard1.txt"
     
     sudoku=Sudoku(path)
     
     print(sudoku,end='\n\n')
     
-    #sudoku.sudokuSolverCP()
-    sudoku.sudokuSolverGA()
+    sudoku.sudokuSolverCP()
+    #sudoku.sudokuSolverGA()
     
     print(sudoku)
-    """
+    print(sudoku.checkSudoku())
 
 if __name__ == "__main__":
     main()

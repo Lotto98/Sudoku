@@ -10,7 +10,7 @@ import copy
 
 from queue import LifoQueue
 
-from random import randint,choice, sample,shuffle
+from random import randint,choice,sample,shuffle
 from typing import Counter
 
 from tabulate import tabulate
@@ -544,8 +544,6 @@ class Sudoku:
             best_fit=max(old_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint
                     
             while True:
-                
-                start_time = time.perf_counter()
                  
                 #random selection
                 population=sample(old_population,int(population_size*random_selection_rate))
@@ -609,10 +607,6 @@ class Sudoku:
                 generation+=1
                 
                 restart+=1
-                
-                end_time = time.perf_counter()
-                execution_time = end_time - start_time
-                #print(f"The execution time is: {execution_time}")
                 
                 if restart>n_generations_no_improvement:
                     
