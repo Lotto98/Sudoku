@@ -72,7 +72,7 @@ class Cell:
             except:
                 return False
     
-    def addDomain(self,_n):
+    def addDomain(self,_n:int):
         if self.isEmpty:
             self.domain.add(_n)
             return True

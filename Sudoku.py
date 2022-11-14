@@ -237,7 +237,7 @@ class Sudoku:
     
     def __CP(self):
         """
-        CP in sudoku. It updates the domain of the empty cells present in row, col or square of every full cell.
+        CP in sudoku. It updates the domains of the empty cells present in row, col or square of every full cell.
         """
         for r in range(0,9):      
             for c in range(0,9):            
