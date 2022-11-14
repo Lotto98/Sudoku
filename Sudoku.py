@@ -24,14 +24,14 @@ class Sudoku:
             _sudoku (str or Sudoku): .
         """
         if _sudoku is None:
-            self.sudoku=[[] for x in range(9)]
+            self.board=[[] for x in range(9)]
         elif isinstance(_sudoku,str):
-            self.sudoku=[]
+            self.board=[]
             with open(_sudoku) as file:
                 for i,line in enumerate(file):
                     line=line.strip('\n')
                     row=[]
-                    self.sudoku.append(row)
+                    self.board.append(row)
                     for j,x in enumerate(line):
                         if int(x)==0:
                             row.append(Cell(i,j))
@@ -39,7 +39,7 @@ class Sudoku:
                             row.append(Cell(i,j,_value=int(x)))
             self.finished=False
         elif isinstance(_sudoku,Sudoku):
-            self.sudoku=copy.deepcopy(_sudoku.sudoku)
+            self.board=copy.deepcopy(_sudoku.board)
             self.finished=False
         else:
             raise TypeError("Expected a str or sudoku object, found "+str(type(_sudoku)))
@@ -50,14 +50,14 @@ class Sudoku:
         """
         print()
         
-        if len(self.sudoku)!=9:
+        if len(self.board)!=9:
             print("Warning: malformed sudoku, number of rows is not 9")
             
-        for n,row in enumerate(self.sudoku):
+        for n,row in enumerate(self.board):
             if len(row)!=9:
                 print("Warning: malformed sudoku in row "+str(n))
         
-        return tabulate(self.sudoku ,headers="keys",showindex=True,tablefmt="outline")
+        return tabulate(self.board ,headers="keys",showindex=True,tablefmt="outline")
 
     @staticmethod 
     def __checkDigits(l: list[Cell]):
@@ -115,7 +115,7 @@ class Sudoku:
         l=[]
         for r in range(i,i+3):
             for c in range(j,j+3):
-                l.append(self.sudoku[r][c])
+                l.append(self.board[r][c])
         return l            
         
     def checkSudoku(self):
@@ -126,12 +126,12 @@ class Sudoku:
             bool: 'True' if the sudoku is correct, 'False' otherwise.
         """
         #check rows
-        for n,row in enumerate(self.sudoku):
+        for n,row in enumerate(self.board):
             if not self.__checkDigits(row):
                 print(" in row "+str(n))
                 return False
         #check cols
-        for n,col in enumerate(list(zip(*self.sudoku))):
+        for n,col in enumerate(list(zip(*self.board))):
             if not self.__checkDigits(col):
                 print(" in col "+str(n))
                 return False
@@ -150,7 +150,7 @@ class Sudoku:
         Returns:
             Cell: min domain cell.
         """
-        return min([item for sublist in self.sudoku for item in sublist], key=lambda x: x.getDomainLen())
+        return min([item for sublist in self.board for item in sublist], key=lambda x: x.getDomainLen())
     
     def __whichSquare(self,n:int):
         """
@@ -181,7 +181,7 @@ class Sudoku:
             set[Cell]: cells in which value was removed from their domain.
         """
         domainRemovedCells=set()
-        for cell in self.sudoku[index]:
+        for cell in self.board[index]:
             if cell.removeDomain(value):
                 domainRemovedCells.add(cell)
         return domainRemovedCells    
@@ -198,7 +198,7 @@ class Sudoku:
             set[Cell]: cells in which value was removed from their domain.
         """
         domainRemovedCells=set()
-        for cell in list(zip(*self.sudoku))[index]:
+        for cell in list(zip(*self.board))[index]:
             if cell.removeDomain(value):
                 domainRemovedCells.add(cell)
         return domainRemovedCells
@@ -241,8 +241,8 @@ class Sudoku:
         """
         for r in range(0,9):      
             for c in range(0,9):            
-                if not self.sudoku[r][c].isEmpty:
-                    self.__removeDomainAll(r,c,self.sudoku[r][c].value)        
+                if not self.board[r][c].isEmpty:
+                    self.__removeDomainAll(r,c,self.board[r][c].value)        
     
             
     def sudokuSolverCP(self):
@@ -306,7 +306,7 @@ class Sudoku:
         sudoku_values=[]
         mask=[]
         
-        for row in self.sudoku:
+        for row in self.board:
             for cell in row:
                 sudoku_values.append(cell.value)
                 if cell.isEmpty:
@@ -317,7 +317,7 @@ class Sudoku:
         return np.array(sudoku_values,dtype=int).reshape(9,9),np.array(mask,dtype=int).reshape(9,9)
     
     def toFile(self,file:str):
-        board=self.sudoku
+        board=self.board
         with open(file, "w") as f:
             for row in board:
                 f.writelines([str(number) for number in Sudoku.__toNumbersSet(row)]+["\n"])
@@ -342,7 +342,7 @@ class Sudoku:
         """        
                     
         #check cols
-        for col in list(zip(*self.sudoku)):
+        for col in list(zip(*self.board)):
             domain=set(INITIAL_DOMAIN)
             
             numbers=Sudoku.__toNumbersSet(col)
@@ -376,7 +376,7 @@ class Sudoku:
         #calculate score for generated sudoku
         self.fitness()
         """
-        board=self.sudoku
+        board=self.board
         for r in range(9):
             #initialization of row domain
             domain=list(INITIAL_DOMAIN)
@@ -400,7 +400,7 @@ class Sudoku:
         full_cells=0
         for row in range(9):
             for col in range(9):
-                if not self.sudoku[row][col].isEmpty:
+                if not self.board[row][col].isEmpty:
                     full_cells+=1
         return full_cells
         
@@ -459,20 +459,20 @@ class Sudoku:
         for index in range(crossover_row_index):
             for c in range(9):
                 
-                cell=Cell(index,c,parent1.sudoku[index][c].value)
+                cell=Cell(index,c,parent1.board[index][c].value)
                 
-                cell.isEmpty=parent1.sudoku[index][c].isEmpty
+                cell.isEmpty=parent1.board[index][c].isEmpty
                 
-                child.sudoku[index].append(cell)
+                child.board[index].append(cell)
         
         for index in range(crossover_row_index,9):
             for c in range(9):
                 
-                cell=Cell(index,c,parent2.sudoku[index][c].value)
+                cell=Cell(index,c,parent2.board[index][c].value)
                 
-                cell.isEmpty=parent2.sudoku[index][c].isEmpty   
+                cell.isEmpty=parent2.board[index][c].isEmpty   
                 
-                child.sudoku[index].append(cell)
+                child.board[index].append(cell)
         
         child.fitness()
         
@@ -494,7 +494,7 @@ class Sudoku:
 
         #select a random row
         mutation_row_index=randint(0,8)
-        mutation_row=self.sudoku[mutation_row_index]
+        mutation_row=self.board[mutation_row_index]
         
         #from all possible indexes remove the indexes of the full cells
         indexes=[x for x in range(9)]
@@ -533,7 +533,7 @@ class Sudoku:
             solution=Sudoku.isSolution(old_population)
             if solution is not None:
                 print("solution found at initial generation (generation 0)")
-                self.sudoku=copy.deepcopy(solution)
+                self.board=copy.deepcopy(solution)
                 self.finished=True
                 return
             
@@ -595,7 +595,7 @@ class Sudoku:
                 solution=Sudoku.isSolution(new_population)
                 if solution is not None:
                     print("\nsolution found at regeneration "+str(iteration)+" at generation "+str(generation))
-                    self.sudoku=copy.deepcopy(solution.sudoku)
+                    self.board=copy.deepcopy(solution.board)
                     self.finished=True
                     return
                 

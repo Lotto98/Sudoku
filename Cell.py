@@ -75,6 +75,9 @@ class Cell:
     def addDomain(self,_n):
         if self.isEmpty:
             self.domain.add(_n)
+            return True
+        else:
+            return False
             
     #def __eq__(self, __o: Cell) -> bool:
         #return self.value==__o.value
