@@ -288,7 +288,7 @@ class Sudoku:
                 #1) reset visited domain for min domain cell
                 min_cell.visitedDomain=set()
                 
-                #2) get last visited cell and the cell in which the domain was modified by its assignment
+                #2) get last visited cell and the cells in which the domain was modified by its assignment
                 last_visited_cell,domainRemovedCells=visited_cells.get()
                 
                 #3) update last visited cell to a empty cell
@@ -329,17 +329,7 @@ class Sudoku:
     
     def fitness(self):
         
-        satisfied_constraint=0
-        
-        """
-        #check rows
-        for row in self.sudoku:
-            domain=set(INITIAL_DOMAIN)
-            
-            numbers=Sudoku.__toNumbersSet(row)
-            
-            satisfied_constraint+=9-len(domain-numbers)
-        """        
+        satisfied_constraint=0       
                     
         #check cols
         for col in list(zip(*self.board)):
@@ -358,24 +348,10 @@ class Sudoku:
             
                 satisfied_constraint+=9-len(domain-numbers)
             
-        self.satisfied_constraint=satisfied_constraint
-        
-        #print(satisfied_constraint)
-        
-                    
+        self.satisfied_constraint=satisfied_constraint      
     
     def randomizeSudokuAndScore(self):
-        """
-        board=self.sudoku
-        #for each empty cell choose a random value to assign to it
-        for r in range(9): 
-            for c in range(9):
-                if board[r][c].isEmpty:
-                    board[r][c].value=choice([x for x in range(1,10)])
-        
-        #calculate score for generated sudoku
-        self.fitness()
-        """
+    
         board=self.board
         for r in range(9):
             #initialization of row domain
@@ -390,7 +366,6 @@ class Sudoku:
             for c in range(9):
                 if board[r][c].isEmpty:
                     board[r][c].value=choice(domain)
-                    #board[r][c].isEmpty=False
                     domain.remove(board[r][c].value)
         
         #calculate score for generated sudoku
@@ -407,49 +382,6 @@ class Sudoku:
     
     @staticmethod
     def getChild(parent1:Sudoku,parent2:Sudoku)->Sudoku:
-        
-        """
-        child=Sudoku()
-        
-        #get number of full cell to exclude them from crossover
-        n_full_cells=parent1.numberFullCell()
-        
-        #at least one Cell from parent1 and at least one Cell from parent2 without counting full cells
-        n_cells_fromParent1=randint(1,80-n_full_cells)
-        
-        #for each row
-        for r in range(9):
-            
-            #create a row and append it to sudoku
-            row=[]
-            child.sudoku[r]=row
-            
-            #for each cell in row
-            for c in range(9):
-                
-                #create cell and append it to row
-                cell=Cell(r,c,0)
-                row.append(cell)
-                
-                #if the cell is empty choose a cell from parent 1 or parent 2
-                if parent1.sudoku[r][c].isEmpty:
-                    
-                    if n_cells_fromParent1>=0:
-                        
-                        cell.value=parent1.sudoku[r][c].value
-                        n_cells_fromParent1-=1
-                    else:
-                        cell.value=parent2.sudoku[r][c].value
-                        
-                else:
-                    #if the cell is full, simply copy it
-                    cell.value=parent1.sudoku[r][c].value
-                    cell.isEmpty=False
-        
-        child.fitness()
-        
-        return child
-        """
         
         child=Sudoku()
         
@@ -480,17 +412,6 @@ class Sudoku:
         
                             
     def mutation(self):
-        
-        """
-        indexes_domain=[(x,y) for x in range(9) for y in range(9)]
-        
-        indexes=sample(indexes_domain,k=n_mutated_cells)
-        
-        for r,c in indexes:
-            self.sudoku[r][c].value=randint(1,9)
-        
-        self.fitness()
-        """
 
         #select a random row
         mutation_row_index=randint(0,8)
