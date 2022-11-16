@@ -506,12 +506,12 @@ class Sudoku:
                 
                 fit=max(new_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint
                 
-                """
+                
                 print("max:",fit,"/ 162 ",
                       "average:", "{:3.2f}".format(sum([x.satisfied_constraint for x in new_population])/len(new_population)),
                       " generation:",generation,
                       " restart: ",restart )
-                """
+                
                 
                 solution=Sudoku.isSolution(new_population)
                 if solution is not None:
@@ -532,7 +532,7 @@ class Sudoku:
                 if restart>n_generations_no_improvement:
                     
                     iteration+=1
-                    """
+                    
                     print("\nreached a possible local minimum")
                     
                     print("best solution for this iteration: ")
@@ -540,7 +540,7 @@ class Sudoku:
                     print(max(new_population,key=operator.attrgetter("satisfied_constraint")).checkSudoku())
                     
                     print("\nrestarting... ")
-                    """
+                    
                     del population,new_population,old_population,children,child,parent1,parent2
                     gc.collect()
                     break  
