@@ -143,6 +143,39 @@ class Sudoku:
                     return False
         return True
     
+    def toNumpy(self):
+        
+        sudoku_values=[]
+        mask=[]
+        
+        for row in self.board:
+            for cell in row:
+                sudoku_values.append(cell.value)
+                if cell.isEmpty:
+                    mask.append(True)
+                else:
+                    mask.append(False)
+        
+        return np.array(sudoku_values,dtype=int).reshape(9,9),np.array(mask,dtype=int).reshape(9,9)
+    
+    def toFile(self,file:str):
+        board=self.board
+        with open(file, "w") as f:
+            for row in board:
+                f.writelines([str(number) for number in Sudoku.__toNumbersSet(row)]+["\n"])
+                
+    def countFullCells(self)->int:
+        count=0
+        for row in self.board:
+            for cell in row:
+                if not cell.isEmpty:
+                    count+=1
+        return count
+    
+    """
+    Constraint propagation & Backtracking Approach
+    """
+    
     def __minDomain(self)->Cell:
         """
         Function that return the sudoku cell with minimum domain.
@@ -251,6 +284,8 @@ class Sudoku:
         Sudoku solver with CP and backtracking approach.
         """
         
+        backtracked_nodes=0
+        
         #Queue of visited cells
         visited_cells=LifoQueue()
         
@@ -285,6 +320,8 @@ class Sudoku:
             #if the cell domain is empty or if all the values in the cell domain were previously assigned backtracking:   
             else:
                 
+                backtracked_nodes+=1
+                
                 #1) reset visited domain for min domain cell
                 min_cell.visitedDomain=set()
                 
@@ -300,27 +337,12 @@ class Sudoku:
                 
                 #5) set the min domain cell as the last visited cell to explore the next value of its domain
                 min_cell=last_visited_cell
-    
-    def toNumpy(self):
         
-        sudoku_values=[]
-        mask=[]
-        
-        for row in self.board:
-            for cell in row:
-                sudoku_values.append(cell.value)
-                if cell.isEmpty:
-                    mask.append(True)
-                else:
-                    mask.append(False)
-        
-        return np.array(sudoku_values,dtype=int).reshape(9,9),np.array(mask,dtype=int).reshape(9,9)
-    
-    def toFile(self,file:str):
-        board=self.board
-        with open(file, "w") as f:
-            for row in board:
-                f.writelines([str(number) for number in Sudoku.__toNumbersSet(row)]+["\n"])
+        return backtracked_nodes
+                
+    """
+    Genetic Algorithm approach
+    """
     
     @staticmethod
     def __toNumbersSet(l:list[Cell])->list[int]:
@@ -445,7 +467,7 @@ class Sudoku:
                 return s
         return None
                                   
-    def sudokuSolverGA(self, population_size:int=3000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_rows_swap:int=3, n_cells_per_row_swap:int=1, n_generations_no_improvement:int=50):
+    def sudokuSolverGA(self, population_size:int=3000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_rows_swap:int=3, n_cells_per_row_swap:int=1, n_generations_no_improvement:int=30):
         
         iteration=1
         
@@ -470,7 +492,6 @@ class Sudoku:
             best_fit=max(old_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint
                     
             while True:
-                
                 
                 #random selection
                 population=sample(old_population,int(population_size*random_selection_rate))

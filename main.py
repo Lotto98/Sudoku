@@ -4,11 +4,11 @@ from solver import sudokuSolverGA_NP
     
 def test():
     
-    if len(sys.argv)<3:
-        print("Expected 2 parameters:\n1) type of computation (CP or GA)\n2) sudoku names (easy,normal,medium or hard)\n3)start number\n4)end number")
+    if len(sys.argv)<5:
+        print("Expected 4 parameters:\n1) type of computation (CP or GA)\n2) sudoku names (easy,normal,medium or hard)\n3) number \n4) n test")
         return
     
-    _,type,name,start,end=sys.argv
+    _,type,name,i,n_test=sys.argv
     
     if name not in ["easy","medium","normal","hard"]:
         print("wrong sudoku name")
@@ -19,63 +19,50 @@ def test():
         return
     
     try:
-        start=int(start)
-        if start < 1:
-            print("parameter 3 needs to be at least 1")
-            return
-    except:
-        print("parameter 3 is not a number")
-        return
-    
-    try:
-        end=int(end)+1
+        n_test=int(n_test)
     except:
         print("parameter 4 is not a number")
         return
+     
+    execution_times=[]
     
-    f=open("examples/"+name+"/results.txt","w")
-    
-    for i in range(start,end):
+    for _ in range(n_test):
         
-        pathIN="examples/"+name+"/"+name+str(i)+".txt"
+        pathIN="examples/"+name+"/"+name+i+".txt"
         sudoku=Sudoku(pathIN)
         
         start_time = time.perf_counter()
         
         if type=="CP":
-            sudoku.sudokuSolverCP()
+            print("backtracked nodes",sudoku.sudokuSolverCP())
         elif type=="GA":
             sudoku.sudokuSolverGA()
-        
+            
         end_time = time.perf_counter()
+        
         execution_time = end_time - start_time
+        execution_times.append(execution_time)
         
+        print(sudoku.checkSudoku())
         
-        print(sudoku.checkSudoku(),execution_time)
-        
-        pathOUT="examples/"+name+"/sol_"+name+str(i)+".txt"
-        sudoku.toFile(pathOUT)
-        
-        f.write(name+str(i)+": "+str(execution_time)+" s\n")
-    
-    f.close()
+    print(np.mean(execution_times))
     
 def main():
     
-    #test()
-    
-    
+    test()
+
+    """
     path="examples/easy/easy1.txt"
-    
+        
     sudoku=Sudoku(path)
     
     print(sudoku,end='\n\n')
     
-    #sudoku.sudokuSolverCP()
-    sudoku.sudokuSolverGA()
+    sudoku.sudokuSolverCP()
+    #sudoku.sudokuSolverGA()
     
     print(sudoku)
     print(sudoku.checkSudoku())
-
+    """
 if __name__ == "__main__":
     main()
