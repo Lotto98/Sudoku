@@ -11,7 +11,6 @@ import copy
 from queue import LifoQueue
 
 from random import randint,choice,sample,shuffle
-from typing import Counter
 
 from tabulate import tabulate
 
