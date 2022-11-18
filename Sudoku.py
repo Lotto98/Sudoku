@@ -371,6 +371,7 @@ class Sudoku:
         #calculate score for generated sudoku
         self.fitness()
 
+    """
     def numberFullCell(self):
         full_cells=0
         for row in range(9):
@@ -378,7 +379,7 @@ class Sudoku:
                 if not self.board[row][col].isEmpty:
                     full_cells+=1
         return full_cells
-        
+    """    
     
     @staticmethod
     def getChild(parent1:Sudoku,parent2:Sudoku)->Sudoku:
@@ -476,7 +477,6 @@ class Sudoku:
                     population.append(old_population[x])
                     
                 shuffle(population)
-                
                 
                 new_population=[copy.deepcopy(s) for s in population]
                 
