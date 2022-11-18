@@ -482,7 +482,7 @@ class Sudoku:
                 print("solution found at initial generation (generation 0)")
                 self.board=copy.deepcopy(solution)
                 self.finished=True
-                return
+                return 0,0
             
             generation=1
             
@@ -549,7 +549,7 @@ class Sudoku:
                     print("\nsolution found at regeneration "+str(iteration)+" at generation "+str(generation))
                     self.board=copy.deepcopy(solution.board)
                     self.finished=True
-                    return
+                    return restart,generation
                 
                 if fit>best_fit:
                     best_fit=fit

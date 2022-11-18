@@ -36,7 +36,8 @@ def test():
         if type=="CP":
             print("backtracked nodes",sudoku.sudokuSolverCP())
         elif type=="GA":
-            sudoku.sudokuSolverGA()
+            restart,generation=sudoku.sudokuSolverGA()
+            print(restart,generation)
             
         end_time = time.perf_counter()
         
