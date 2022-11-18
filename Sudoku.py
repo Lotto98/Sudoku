@@ -327,7 +327,7 @@ class Sudoku:
         
         return set([cell.value for cell in l])
     
-    def fitness(self):
+    def __fitness(self):
         
         satisfied_constraint=0       
                     
@@ -350,7 +350,7 @@ class Sudoku:
             
         self.satisfied_constraint=satisfied_constraint      
     
-    def randomizeSudokuAndScore(self):
+    def __randomizeSudokuAndScore(self):
     
         board=self.board
         for r in range(9):
@@ -369,7 +369,7 @@ class Sudoku:
                     domain.remove(board[r][c].value)
         
         #calculate score for generated sudoku
-        self.fitness()
+        self.__fitness()
 
     def numberFullCell(self):
         full_cells=0
@@ -381,7 +381,7 @@ class Sudoku:
         
     
     @staticmethod
-    def getChild(parent1:Sudoku,parent2:Sudoku)->Sudoku:
+    def __getChild(parent1:Sudoku,parent2:Sudoku)->Sudoku:
         
         child=Sudoku()
         
@@ -406,41 +406,45 @@ class Sudoku:
                 
                 child.board[index].append(cell)
         
-        child.fitness()
+        child.__fitness()
         
         return child
         
                             
-    def mutation(self):
-
-        #select a random row
-        mutation_row_index=randint(0,8)
-        mutation_row=self.board[mutation_row_index]
+    def __mutation(self,n_rows,n_cells_per_row):
         
-        #from all possible indexes remove the indexes of the full cells
-        indexes=[x for x in range(9)]
-        for n,cell in enumerate(mutation_row):
-            if not cell.isEmpty:
-                indexes.remove(n)
-        
-        #sample 2 random indexes    
-        cell1,cell2=sample(indexes,2)
-        
-        #swap
-        temp=mutation_row[cell1]
-        mutation_row[cell1]=mutation_row[cell2]
-        mutation_row[cell2]=temp
-        
-        self.fitness()
+        for _ in range(n_rows):
+            
+            #select a random row
+            mutation_row_index=randint(0,8)
+            mutation_row=self.board[mutation_row_index]
+            
+            for _ in range(n_cells_per_row):
+                
+                #from all possible indexes remove the indexes of the full cells
+                indexes=[x for x in range(9)]
+                for n,cell in enumerate(mutation_row):
+                    if not cell.isEmpty:
+                        indexes.remove(n)
+                
+                #sample 2 random indexes    
+                cell1,cell2=sample(indexes,2)
+                
+                #swap
+                temp=mutation_row[cell1]
+                mutation_row[cell1]=mutation_row[cell2]
+                mutation_row[cell2]=temp
+                
+                self.__fitness()
         
     @staticmethod
-    def isSolution(population:list[Sudoku]):
+    def __isSolution(population:list[Sudoku])->Sudoku:
         for s in population:
             if s.satisfied_constraint==(81*2):
                 return s
         return None
                                   
-    def sudokuSolverGA(self, population_size:int=2000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_mutation_swap:int=1, n_generations_no_improvement:int=30):
+    def sudokuSolverGA(self, population_size:int=3000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_rows_swap:int=3, n_cells_per_row_swap:int=1, n_generations_no_improvement:int=50):
         
         iteration=1
         
@@ -449,9 +453,9 @@ class Sudoku:
             #initial generation
             old_population=[Sudoku(self) for x in range(population_size)]
             for sudoku in old_population:
-                sudoku.randomizeSudokuAndScore()
+                sudoku.__randomizeSudokuAndScore()
             
-            solution=Sudoku.isSolution(old_population)
+            solution=Sudoku.__isSolution(old_population)
             if solution is not None:
                 print("solution found at initial generation (generation 0)")
                 self.board=copy.deepcopy(solution)
@@ -465,7 +469,8 @@ class Sudoku:
             best_fit=max(old_population,key=operator.attrgetter("satisfied_constraint")).satisfied_constraint
                     
             while True:
-                 
+                
+                
                 #random selection
                 population=sample(old_population,int(population_size*random_selection_rate))
                 
@@ -475,8 +480,14 @@ class Sudoku:
                 for x in range(int(population_size*selection_rate)):
                     population.append(old_population[x])
                     
-                shuffle(population)
+                #shuffle(population)
                 
+                #roulette wheel selection (fail)
+                """
+                sum_satisfied_constraints=sum([sudoku.satisfied_constraint for sudoku in old_population])
+                p=[sudoku.satisfied_constraint/sum_satisfied_constraints for sudoku in old_population]
+                population=np.random.choice(old_population,int(0.5*population_size),p=p,replace=True).tolist()
+                """
                 
                 new_population=[copy.deepcopy(s) for s in population]
                 
@@ -489,7 +500,7 @@ class Sudoku:
                     for _ in range(n_children):
                         
                         
-                        child=Sudoku.getChild(parent1,parent2)    
+                        child=Sudoku.__getChild(parent1,parent2)    
                         
                         #children.append(max([child,parent1,parent2], key=operator.attrgetter("satisfied_constraint")))
                         children.append(child)    
@@ -499,8 +510,7 @@ class Sudoku:
                 shuffle(new_population)
                 
                 for e in range(int(population_size*mutation_rate)):
-                    for _ in range(n_mutation_swap):
-                        new_population[e].mutation()
+                    new_population[e].__mutation(n_rows_swap,n_cells_per_row_swap)
                     
                 shuffle(new_population)
                 
@@ -513,7 +523,7 @@ class Sudoku:
                       " restart: ",restart )
                 
                 
-                solution=Sudoku.isSolution(new_population)
+                solution=Sudoku.__isSolution(new_population)
                 if solution is not None:
                     print("\nsolution found at regeneration "+str(iteration)+" at generation "+str(generation))
                     self.board=copy.deepcopy(solution.board)

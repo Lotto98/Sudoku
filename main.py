@@ -65,14 +65,14 @@ def main():
     #test()
     
     
-    path="examples/hard/hard1.txt"
+    path="examples/easy/easy1.txt"
     
     sudoku=Sudoku(path)
     
     print(sudoku,end='\n\n')
     
-    sudoku.sudokuSolverCP()
-    #sudoku.sudokuSolverGA()
+    #sudoku.sudokuSolverCP()
+    sudoku.sudokuSolverGA()
     
     print(sudoku)
     print(sudoku.checkSudoku())
