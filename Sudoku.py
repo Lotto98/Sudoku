@@ -485,7 +485,7 @@ class Sudoku:
             if solution is not None:
                 print("solution found at initial generation (generation 0)")
                 self.board=copy.deepcopy(solution)
-                return 0,0
+                return iteration,total_generations
             
             generation=1
             
