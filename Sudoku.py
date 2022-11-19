@@ -283,7 +283,8 @@ class Sudoku:
         Sudoku solver with CP and backtracking approach.
         """
         
-        backtracked_nodes=0
+        restored_nodes=0
+        assigned_nodes=0
         
         #Queue of visited cells
         visited_cells=LifoQueue()
@@ -299,6 +300,8 @@ class Sudoku:
             
             #if there is at least one value that was not previously assigned in the min domain cell domain then:
             if len(min_cell.domain-min_cell.visitedDomain)>0:
+                
+                assigned_nodes+=1
                 
                 #1) update value of the min domain cell
                 min_cell.value=(min_cell.domain-min_cell.visitedDomain).pop()
@@ -319,7 +322,7 @@ class Sudoku:
             #if the cell domain is empty or if all the values in the cell domain were previously assigned backtracking:   
             else:
                 
-                backtracked_nodes+=1
+                restored_nodes+=1
                 
                 #1) reset visited domain for min domain cell
                 min_cell.visitedDomain=set()
@@ -337,7 +340,7 @@ class Sudoku:
                 #5) set the min domain cell as the last visited cell to explore the next value of its domain
                 min_cell=last_visited_cell
         
-        return backtracked_nodes
+        return restored_nodes,assigned_nodes
                 
     """
     Genetic Algorithm approach
@@ -469,6 +472,7 @@ class Sudoku:
     def sudokuSolverGA(self, population_size:int=3000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_rows_swap:int=3, n_cells_per_row_swap:int=1, n_generations_no_improvement:int=30):
         
         iteration=1
+        total_generations=0
         
         while True:
             
@@ -481,7 +485,6 @@ class Sudoku:
             if solution is not None:
                 print("solution found at initial generation (generation 0)")
                 self.board=copy.deepcopy(solution)
-                self.finished=True
                 return 0,0
             
             generation=1
@@ -548,8 +551,7 @@ class Sudoku:
                 if solution is not None:
                     print("\nsolution found at regeneration "+str(iteration)+" at generation "+str(generation))
                     self.board=copy.deepcopy(solution.board)
-                    self.finished=True
-                    return restart,generation
+                    return iteration,total_generations
                 
                 if fit>best_fit:
                     best_fit=fit
@@ -563,6 +565,7 @@ class Sudoku:
                 if restart>n_generations_no_improvement:
                     
                     iteration+=1
+                    total_generations+=generation
                     
                     print("\nreached a possible local minimum")
                     
