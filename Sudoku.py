@@ -330,10 +330,22 @@ class Sudoku:
     
     @staticmethod
     def __toNumbersSet(l:list[Cell])->list[int]:
+        """
+        Function that given a list of Cells it returns a list of ints containing the cell values.
+
+        Args:
+            l (list[Cell]): input list.
+
+        Returns:
+            list[int]: output list.
+        """
         
         return set([cell.value for cell in l])
     
     def __fitness(self):
+        """
+        Function that calculate the fitness for the given Sudoku
+        """
         
         satisfied_constraint=0       
                     
@@ -357,6 +369,9 @@ class Sudoku:
         self.satisfied_constraint=satisfied_constraint      
     
     def __randomizeSudokuAndScore(self):
+        """
+        Function that randomizes the empty cells for the given Sudoku.
+        """
     
         board=self.board
         for r in range(9):
@@ -379,6 +394,16 @@ class Sudoku:
     
     @staticmethod
     def __getChild(parent1:Sudoku,parent2:Sudoku)->Sudoku:
+        """
+        Crossover function
+
+        Args:
+            parent1 (Sudoku): parent 1.
+            parent2 (Sudoku): parent 2.
+
+        Returns:
+            Sudoku: child Sudoku.
+        """
         
         child=Sudoku()
         
@@ -409,6 +434,13 @@ class Sudoku:
         
                             
     def __mutation(self,n_rows,n_cells_per_row):
+        """
+        Mutation function.
+
+        Args:
+            n_rows (_type_): n of row to mutate.
+            n_cells_per_row (_type_): n cell to mutate per row.
+        """
         
         for _ in range(n_rows):
             
@@ -436,12 +468,25 @@ class Sudoku:
         
     @staticmethod
     def __isSolution(population:list[Sudoku])->Sudoku:
+        """
+        Function that checks if in a given population there is at least one solution and returns it.
+
+        Args:
+            population (list[Sudoku]): Population of Sudokus.
+
+        Returns:
+            Sudoku: The solution Sudoku.
+        """
         for s in population:
             if s.satisfied_constraint==(81*2):
                 return s
         return None
                                   
     def sudokuSolverGA(self, population_size:int=3000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_rows_swap:int=3, n_cells_per_row_swap:int=1, n_generations_no_improvement:int=30):
+        
+        """"
+        Genetic Algorithm
+        """
         
         iteration=1
         total_generations=1
