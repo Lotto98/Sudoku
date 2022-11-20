@@ -50,8 +50,8 @@ def main():
     
     print(sudoku,end='\n\n')
     
-    sudoku.sudokuSolverCP()
-    #sudoku.sudokuSolverGA()
+    #sudoku.sudokuSolverCP()
+    sudoku.sudokuSolverGA()
     
     print(sudoku)
     print(sudoku.checkSudoku())
