@@ -1,10 +1,7 @@
 from __future__ import annotations
 import gc
 import operator
-import time
 from Cell import Cell,INITIAL_DOMAIN
-
-import numpy as np
 
 import copy
 
@@ -141,21 +138,6 @@ class Sudoku:
                     print(" in square: "+str(row_start)+","+str(col_start))
                     return False
         return True
-    
-    def toNumpy(self):
-        
-        sudoku_values=[]
-        mask=[]
-        
-        for row in self.board:
-            for cell in row:
-                sudoku_values.append(cell.value)
-                if cell.isEmpty:
-                    mask.append(True)
-                else:
-                    mask.append(False)
-        
-        return np.array(sudoku_values,dtype=int).reshape(9,9),np.array(mask,dtype=int).reshape(9,9)
     
     def toFile(self,file:str):
         board=self.board
@@ -393,17 +375,7 @@ class Sudoku:
                     domain.remove(board[r][c].value)
         
         #calculate score for generated sudoku
-        self.__fitness()
-
-    """
-    def numberFullCell(self):
-        full_cells=0
-        for row in range(9):
-            for col in range(9):
-                if not self.board[row][col].isEmpty:
-                    full_cells+=1
-        return full_cells
-    """    
+        self.__fitness()   
     
     @staticmethod
     def __getChild(parent1:Sudoku,parent2:Sudoku)->Sudoku:
@@ -472,7 +444,7 @@ class Sudoku:
     def sudokuSolverGA(self, population_size:int=3000, selection_rate:float=0.25, random_selection_rate:float=0.25, n_children:int=4, mutation_rate:float=0.3, n_rows_swap:int=3, n_cells_per_row_swap:int=1, n_generations_no_improvement:int=30):
         
         iteration=1
-        total_generations=0
+        total_generations=1
         
         while True:
             
@@ -504,14 +476,6 @@ class Sudoku:
                 for x in range(int(population_size*selection_rate)):
                     population.append(old_population[x])
                     
-                #shuffle(population)
-                
-                #roulette wheel selection (fail)
-                """
-                sum_satisfied_constraints=sum([sudoku.satisfied_constraint for sudoku in old_population])
-                p=[sudoku.satisfied_constraint/sum_satisfied_constraints for sudoku in old_population]
-                population=np.random.choice(old_population,int(0.5*population_size),p=p,replace=True).tolist()
-                """
                 
                 new_population=[copy.deepcopy(s) for s in population]
                 
@@ -562,10 +526,11 @@ class Sudoku:
                 
                 restart+=1
                 
+                total_generations+=1
+                
                 if restart>n_generations_no_improvement:
                     
                     iteration+=1
-                    total_generations+=generation
                     
                     print("\nreached a possible local minimum")
                     

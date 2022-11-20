@@ -1,6 +1,6 @@
 import sys
 from Sudoku import *
-from solver import sudokuSolverGA_NP
+import time
     
 def test():
     
@@ -41,9 +41,9 @@ def test():
     
 def main():
     
-    test()
+    #test()
 
-    """
+    
     path="examples/easy/easy1.txt"
         
     sudoku=Sudoku(path)
@@ -55,6 +55,6 @@ def main():
     
     print(sudoku)
     print(sudoku.checkSudoku())
-    """
+
 if __name__ == "__main__":
     main()
